@@ -34,14 +34,6 @@
 #include <unistd.h>
 #endif
 
-struct LGMPMemory
-{
-  PLGMPHost    host;
-  unsigned int offset;
-  uint32_t     size;
-  void        *mem;
-};
-
 // returns a milliseond resolution monotonic counter
 inline static uint64_t lgmpGetClockMS(void)
 {
