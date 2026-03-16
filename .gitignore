@@ -3,6 +3,7 @@
 *.exe
 */build
 .vs/
+.vscode/
 Debug/
 x64/
 x86/
