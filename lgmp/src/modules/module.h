@@ -55,6 +55,8 @@ struct LGMPHostQueueOps {
     uint32_t    (*queuePending)(PLGMPHostQueue queue);
     LGMP_STATUS (*queuePost)(PLGMPHostQueue queue, uint32_t udata,
       PLGMPMemory payload);
+    LGMP_STATUS (*QueuePostSized)(PLGMPHostQueue queue, uint32_t udata,
+      PLGMPMemory payload, int64_t payloadSize);
     LGMP_STATUS (*readData)(PLGMPHostQueue queue, void * data, size_t * size);
     LGMP_STATUS (*ackData)(PLGMPHostQueue queue);
     LGMP_STATUS (*getClientIDs)(PLGMPHostQueue queue, uint32_t clientIDs[32],

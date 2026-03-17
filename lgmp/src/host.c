@@ -73,8 +73,15 @@ uint32_t lgmpHostQueuePending(PLGMPHostQueue queue)
 LGMP_STATUS lgmpHostQueuePost(PLGMPHostQueue queue, uint32_t udata,
     PLGMPMemory payload)
 {
+  return lgmpHostQueuePostSized(queue, udata, payload, -1);
+}
+
+LGMP_STATUS lgmpHostQueuePostSized(PLGMPHostQueue queue, uint32_t udata,
+    PLGMPMemory payload, int64_t payloadSize)
+{
   assert(queue);
-  return queue->ops->queuePost(queue, udata, payload);
+  assert(payload);
+  return queue->ops->QueuePostSized(queue, udata, payload, payloadSize);
 }
 
 LGMP_STATUS lgmpHostReadData(PLGMPHostQueue queue, void * data, size_t * size)

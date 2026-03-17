@@ -381,9 +381,25 @@ static void * lgmpShmHostMemPtr(PLGMPMemory mem)
   return mem->mem;
 }
 
+static LGMP_STATUS lgmpShmHostQueuePostSized(PLGMPHostQueue queue, uint32_t udata,
+    PLGMPMemory payload, int64_t payloadSize);
+
 static LGMP_STATUS lgmpShmHostQueuePost(PLGMPHostQueue queue, uint32_t udata,
     PLGMPMemory payload)
 {
+  return lgmpShmHostQueuePostSized(queue, udata, payload, -1);
+}
+
+static LGMP_STATUS lgmpShmHostQueuePostSized(PLGMPHostQueue queue, uint32_t udata,
+    PLGMPMemory payload, int64_t payloadSize)
+{
+  if (payloadSize < 0)
+    payloadSize = payload->size;
+  else if ((uint64_t)payloadSize > payload->size)
+    return LGMP_ERR_INVALID_SIZE;
+
+  uint32_t size = (uint32_t)payloadSize;
+
   struct LGMPShmHostQueue * sq = queue->internal;
   struct LGMPShmHost * shm = queue->host->internal;
   struct LGMPHeaderQueue *hq = sq->hq;
@@ -424,7 +440,7 @@ static LGMP_STATUS lgmpShmHostQueuePost(PLGMPHostQueue queue, uint32_t udata,
   struct LGMPHeaderMessage *msg = &messages[sq->position];
 
   msg->udata       = udata;
-  msg->size        = payload->size;
+  msg->size        = size;
   msg->offset      = payload->offset;
   atomic_store_explicit(&msg->pendingSubs, pend, memory_order_release);
 
@@ -520,7 +536,7 @@ const struct LGMPHostQueueOps lgmpShmHostQueueOps =
   .queueNewSubs    = lgmpShmHostQueueNewSubs,
   .queuePending    = lgmpShmHostQueuePending,
   .queuePost       = lgmpShmHostQueuePost,
-  .queuePostEx     = lgmpShmHostQueuePostEx,
+  .QueuePostSized     = lgmpShmHostQueuePostSized,
   .readData        = lgmpShmHostReadData,
   .ackData         = lgmpShmHostAckData,
   .getClientIDs    = lgmpShmHostGetClientIDs,
