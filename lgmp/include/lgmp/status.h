@@ -44,7 +44,17 @@ typedef enum
   LGMP_ERR_INVALID_MAGIC,
   LGMP_ERR_INVALID_VERSION,
   LGMP_ERR_NO_SUCH_QUEUE,
-  LGMP_ERR_CORRUPTED
+  LGMP_ERR_CORRUPTED,
+  LGMP_ERR_NOT_SUPPORTED,               // Operation not supported [by backend]
+  // Fabric-backend specific errors
+  LGMP_ERR_TRANSPORT_INIT_FAILURE,      // Failure to initialize fabric resources
+  LGMP_ERR_TRANSPORT_CONNECT_FAILURE,   // Failure to connect
+  LGMP_ERR_TRANSPORT_DISCONNECTED,      // Connection closed
+  LGMP_ERR_TRANSPORT_REJECTED,          // Connection rejected by host
+  LGMP_ERR_TRANSPORT_IO,                // I/O error
+  LGMP_ERR_TRANSPORT_NO_CREDITS,        // No transmit/receive credits available 
+                                        // (usually due to network saturation)
+  LGMP_ERR_TRANSPORT_MEM_REG,           // Failure to register memory
 }
 LGMP_STATUS;
 
