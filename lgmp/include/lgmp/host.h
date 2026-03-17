@@ -51,24 +51,76 @@ uint32_t    lgmpHostQueueNewSubs(PLGMPHostQueue queue);
 uint32_t    lgmpHostQueuePending(PLGMPHostQueue queue);
 LGMP_STATUS lgmpHostQueuePost   (PLGMPHostQueue queue, uint32_t udata,
     PLGMPMemory payload);
+LGMP_STATUS lgmpHostQueuePostEx (PLGMPHostQueue queue, uint32_t udata,
+    PLGMPMemory payload, int64_t payloadSize);
 LGMP_STATUS lgmpHostReadData(PLGMPHostQueue queue, void * data, size_t * size);
 LGMP_STATUS lgmpHostAckData(PLGMPHostQueue queue);
 LGMP_STATUS lgmpHostGetClientIDs(PLGMPHostQueue queue, uint32_t clientIDs[32],
     unsigned int * count);
 
+
 /**
- * Allocates some RAM for application use from the shared memory
+ * @brief Get the amount of memory available for allocations.
+ * 
+ * @warning The fabric backend returns a large amount of available memory, but
+ *          unlike the shared memory backend, this memory is not actually
+ *          allocated yet. Therefore, you should not allocate all of the 
+ *          memory returned from this call.
  *
- * Note: These allocations are permanant! Calling lgmpHostMemFree only frees
- * the LGMPMemory structure, but does not recover the shared memory for later
- * use.
+ * @param queue Queue to query free memory from. 
+ *              The queue is irrelevant for the shared memory backend, and
+ *              currently irrelevant for the fabric backend as well.
+ *
+ * @return size_t The amount of memory available for allocations.
  */
-size_t      lgmpHostMemAvail       (PLGMPHost host);
-LGMP_STATUS lgmpHostMemAlloc       (PLGMPHost host, uint32_t size,
+size_t      lgmpHostMemAvail       (PLGMPHostQueue queue);
+
+/**
+ * @brief Allocates some RAM for application use from the shared memory
+ *
+ * @warning These allocations are permanent with the shared memory backend.
+ *          With the fabric backend, the allocations are recoverable.
+ *          See #lgmpHostMemFree.
+ *
+ * @param queue     LGMP queue to allocate memory from. 
+ *                  For the shared memory backend, the queue is irrelevant.
+ *                  For the fabric backend, the memory returned from this call 
+ *                  may only be used on the queue used to allocate it.
+ * @param size      Size of the memory to allocate
+ * @param result    The allocated memory region
+ */
+LGMP_STATUS lgmpHostMemAlloc       (PLGMPHostQueue queue, uint32_t size,
     PLGMPMemory * result);
-LGMP_STATUS lgmpHostMemAllocAligned(PLGMPHost host, uint32_t size,
+
+/**
+ * @brief Like #lgmpHostMemAlloc, with an additional alignment specification.
+ *
+ * @param queue     LGMP queue to allocate memory from
+ * @param size      Size of the memory to allocate
+ * @param alignment Alignment of the memory to allocate
+ * @param result    The allocated memory region
+ */
+LGMP_STATUS lgmpHostMemAllocAligned(PLGMPHostQueue queue, uint32_t size,
     uint32_t alignment, PLGMPMemory * result);
+
+/**
+ * @brief Free a memory block.
+ *
+ * @warning Calling this function only frees the #LGMPMemory structure, but
+ *          does not recover the shared memory for later use. However, when 
+ *          using the fabric transport, these allocations are recoverable.
+ * 
+ * @param mem Memory block to free.
+ */
 void        lgmpHostMemFree        (PLGMPMemory * mem);
+
+/**
+ * @brief Get a pointer to the block of memory referred to by the #PLGMPMemory.
+ *
+ * @param mem Memory block to get a pointer to.
+ *
+ * @return void* Pointer to the memory block.
+ */
 void *      lgmpHostMemPtr         (PLGMPMemory mem);
 
 #ifdef __cplusplus

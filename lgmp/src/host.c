@@ -96,24 +96,24 @@ LGMP_STATUS lgmpHostGetClientIDs(PLGMPHostQueue queue, uint32_t clientIDs[32],
   return queue->ops->getClientIDs(queue, clientIDs, count);
 }
 
-size_t lgmpHostMemAvail(PLGMPHost host)
+size_t lgmpHostMemAvail(PLGMPHostQueue queue)
 {
-  assert(host);
-  return host->iface->memAvail(host);
+  assert(queue);
+  return queue->ops->memAvail(queue);
 }
 
-LGMP_STATUS lgmpHostMemAlloc(PLGMPHost host, uint32_t size,
+LGMP_STATUS lgmpHostMemAlloc(PLGMPHostQueue queue, uint32_t size,
     PLGMPMemory * result)
 {
-  assert(host);
-  return host->iface->memAlloc(host, size, result);
+  assert(queue);
+  return queue->ops->memAlloc(queue, size, result);
 }
 
-LGMP_STATUS lgmpHostMemAllocAligned(PLGMPHost host, uint32_t size,
+LGMP_STATUS lgmpHostMemAllocAligned(PLGMPHostQueue queue, uint32_t size,
     uint32_t alignment, PLGMPMemory * result)
 {
-  assert(host);
-  return host->iface->memAllocAligned(host, size, alignment, result);
+  assert(queue);
+  return queue->ops->memAllocAligned(queue, size, alignment, result);
 }
 
 void lgmpHostMemFree(PLGMPMemory * mem)
@@ -121,11 +121,11 @@ void lgmpHostMemFree(PLGMPMemory * mem)
   assert(mem);
   if (!*mem)
     return;
-  (*mem)->host->iface->memFree(mem);
+  (*mem)->queue->ops->memFree(mem);
 }
 
 void * lgmpHostMemPtr(PLGMPMemory mem)
 {
   assert(mem);
-  return mem->host->iface->memPtr(mem);
+  return mem->queue->ops->memPtr(mem);
 }

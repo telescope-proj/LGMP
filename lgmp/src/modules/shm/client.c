@@ -604,6 +604,13 @@ static LGMP_STATUS lgmpShmClientGetSerial(PLGMPClientQueue queue,
   return LGMP_OK;
 }
 
+static LGMP_STATUS lgmpShmClientMemAttach(PLGMPClientQueue queue, void * mem,
+    uint64_t size, int dmaFd)
+{
+  (void)queue; (void)mem; (void)size; (void)dmaFd;
+  return LGMP_ERR_NOT_SUPPORTED;
+}
+
 const struct LGMPClientInterface lgmpShmClientInterface =
 {
   .type         = LGMP_MODULE_TYPE_SHM,
@@ -621,4 +628,5 @@ const struct LGMPClientQueueOps lgmpShmClientQueueOps =
   .messageDone   = lgmpShmClientMessageDone,
   .sendData      = lgmpShmClientSendData,
   .getSerial     = lgmpShmClientGetSerial,
+  .memAttach     = lgmpShmClientMemAttach,
 };

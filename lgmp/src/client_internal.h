@@ -2,7 +2,6 @@
 #define LGMP_CLIENT_INTERNAL_H
 
 #include "lgmp/lgmp.h"
-#include "headers.h"
 #include "modules/module.h"
 
 struct LGMPClientQueue

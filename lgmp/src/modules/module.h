@@ -36,6 +36,8 @@ struct LGMPClientQueueOps {
   LGMP_STATUS (*sendData)(PLGMPClientQueue queue, const void * data,
       uint32_t size, uint32_t * serial);
   LGMP_STATUS (*getSerial)(PLGMPClientQueue queue, uint32_t * serial);
+  LGMP_STATUS (*memAttach)(PLGMPClientQueue queue, void * mem,
+    uint64_t size, int dmaFd);
 };
 
 struct LGMPHostInterface {
@@ -45,14 +47,6 @@ struct LGMPHostInterface {
 
   LGMP_STATUS (*queueNew)(PLGMPHost host,
     const struct LGMPQueueConfig config, PLGMPHostQueue * result);
-
-  size_t      (*memAvail)(PLGMPHost host);
-  LGMP_STATUS (*memAlloc)(PLGMPHost host, uint32_t size,
-    PLGMPMemory * result);
-  LGMP_STATUS (*memAllocAligned)(PLGMPHost host, uint32_t size,
-    uint32_t alignment, PLGMPMemory * result);
-  void        (*memFree)(PLGMPMemory * mem);
-  void *      (*memPtr)(PLGMPMemory mem);
 };
 
 struct LGMPHostQueueOps {
@@ -65,6 +59,13 @@ struct LGMPHostQueueOps {
     LGMP_STATUS (*ackData)(PLGMPHostQueue queue);
     LGMP_STATUS (*getClientIDs)(PLGMPHostQueue queue, uint32_t clientIDs[32],
       unsigned int * count);
+    size_t      (*memAvail)(PLGMPHostQueue queue);
+    LGMP_STATUS (*memAlloc)(PLGMPHostQueue queue, uint32_t size,
+      PLGMPMemory * result);
+    LGMP_STATUS (*memAllocAligned)(PLGMPHostQueue queue, uint32_t size,
+      uint32_t alignment, PLGMPMemory * result);
+    void        (*memFree)(PLGMPMemory * mem);
+    void *      (*memPtr)(PLGMPMemory mem);
 };
 
 extern const struct LGMPClientInterface lgmpShmClientInterface;

@@ -311,29 +311,29 @@ static LGMP_STATUS lgmpShmHostProcess(PLGMPHost host)
   return LGMP_OK;
 }
 
-static size_t lgmpShmHostMemAvail(PLGMPHost host)
+static LGMP_STATUS lgmpShmHostMemAllocAligned(PLGMPHostQueue queue,
+    uint32_t size, uint32_t alignment, PLGMPMemory *result);
+
+static size_t lgmpShmHostMemAvail(PLGMPHostQueue queue)
 {
-  assert(host);
-  struct LGMPShmHost * shm = host->internal;
+  assert(queue);
+  struct LGMPShmHost * shm = queue->host->internal;
   return shm->avail;
 }
 
-static LGMP_STATUS lgmpShmHostMemAllocAligned(PLGMPHost host, uint32_t size,
-    uint32_t alignment, PLGMPMemory *result);
-
-static LGMP_STATUS lgmpShmHostMemAlloc(PLGMPHost host, uint32_t size,
+static LGMP_STATUS lgmpShmHostMemAlloc(PLGMPHostQueue queue, uint32_t size,
     PLGMPMemory *result)
 {
-  return lgmpShmHostMemAllocAligned(host, size, 4, result);
+  return lgmpShmHostMemAllocAligned(queue, size, 4, result);
 }
 
-static LGMP_STATUS lgmpShmHostMemAllocAligned(PLGMPHost host, uint32_t size,
-    uint32_t alignment, PLGMPMemory *result)
+static LGMP_STATUS lgmpShmHostMemAllocAligned(PLGMPHostQueue queue,
+    uint32_t size, uint32_t alignment, PLGMPMemory *result)
 {
-  assert(host);
+  assert(queue);
   assert(result);
 
-  struct LGMPShmHost * shm = host->internal;
+  struct LGMPShmHost * shm = queue->host->internal;
 
   uint32_t nextFree = shm->nextFree;
   if (alignment > 0)
@@ -354,7 +354,7 @@ static LGMP_STATUS lgmpShmHostMemAllocAligned(PLGMPHost host, uint32_t size,
     return LGMP_ERR_NO_MEM;
 
   PLGMPMemory mem = *result;
-  mem->host   = host;
+  mem->queue  = queue;
   mem->offset = nextFree;
   mem->size   = size;
   mem->mem    = shm->mem + nextFree;
@@ -512,11 +512,6 @@ const struct LGMPHostInterface lgmpShmHostInterface =
   .free            = lgmpShmHostFree,
   .process         = lgmpShmHostProcess,
   .queueNew        = lgmpShmHostQueueNew,
-  .memAvail        = lgmpShmHostMemAvail,
-  .memAlloc        = lgmpShmHostMemAlloc,
-  .memAllocAligned = lgmpShmHostMemAllocAligned,
-  .memFree         = lgmpShmHostMemFree,
-  .memPtr          = lgmpShmHostMemPtr,
 };
 
 const struct LGMPHostQueueOps lgmpShmHostQueueOps =
@@ -525,7 +520,13 @@ const struct LGMPHostQueueOps lgmpShmHostQueueOps =
   .queueNewSubs    = lgmpShmHostQueueNewSubs,
   .queuePending    = lgmpShmHostQueuePending,
   .queuePost       = lgmpShmHostQueuePost,
+  .queuePostEx     = lgmpShmHostQueuePostEx,
   .readData        = lgmpShmHostReadData,
   .ackData         = lgmpShmHostAckData,
   .getClientIDs    = lgmpShmHostGetClientIDs,
+  .memAvail        = lgmpShmHostMemAvail,
+  .memAlloc        = lgmpShmHostMemAlloc,
+  .memAllocAligned = lgmpShmHostMemAllocAligned,
+  .memFree         = lgmpShmHostMemFree,
+  .memPtr          = lgmpShmHostMemPtr,
 };

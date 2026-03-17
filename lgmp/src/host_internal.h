@@ -2,7 +2,6 @@
 #define LGMP_HOST_INTERNAL_H
 
 #include "lgmp/lgmp.h"
-#include "headers.h"
 #include "modules/module.h"
 
 struct LGMPHostQueue
@@ -29,11 +28,11 @@ struct LGMPHost
 
 struct LGMPMemory
 {
-  PLGMPHost    host;
-  unsigned int offset;
-  uint32_t     size;
-  void        *mem;
-  void        *internal;
+  PLGMPHostQueue queue;
+  unsigned int   offset;
+  uint32_t       size;
+  void          *mem;
+  void          *internal;
 };
 
 #endif
