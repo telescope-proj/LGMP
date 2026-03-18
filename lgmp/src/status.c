@@ -53,3 +53,65 @@ const char * lgmpStatusString(LGMP_STATUS status)
   }
   return "Invalid status!";
 }
+
+const char * lgmpStatusInfoString(LGMP_STATUS status)
+{
+  switch(status)
+  {
+    case LGMP_OK: 
+      return "LGMP_OK";
+    case LGMP_ERR_CLOCK_FAILURE:
+      return "Failed to get time";
+    case LGMP_ERR_INVALID_ARGUMENT:
+      return "Invalid argument";
+    case LGMP_ERR_INVALID_SIZE:
+      return "Invalid size";
+    case LGMP_ERR_INVALID_ALIGNMENT:
+      return "Invalid alignment";
+    case LGMP_ERR_INVALID_SESSION:
+      return "Invalid session";
+    case LGMP_ERR_NO_MEM:
+      return "No memory available";
+    case LGMP_ERR_NO_SHARED_MEM:
+      return "No shared memory available";
+    case LGMP_ERR_HOST_STARTED:
+      return "Host already started";
+    case LGMP_ERR_NO_QUEUES:
+      return "No queues available";
+    case LGMP_ERR_QUEUE_FULL:
+      return "Queue full";
+    case LGMP_ERR_QUEUE_EMPTY:
+      return "Queue empty";
+    case LGMP_ERR_QUEUE_UNSUBSCRIBED:
+      return "Queue unsubscribed";
+    case LGMP_ERR_QUEUE_TIMEOUT:
+      return "Queue timeout";
+    case LGMP_ERR_INVALID_MAGIC:
+      return "Invalid magic in queue header (is the host running?)";
+    case LGMP_ERR_INVALID_VERSION:
+      return "Invalid version in queue header (version mismatch?)";
+    case LGMP_ERR_NO_SUCH_QUEUE:
+      return "No such queue exists (LG version mismatch?)";
+    case LGMP_ERR_CORRUPTED:
+      return "Queue corrupted (is the host running?)";
+    case LGMP_ERR_TRANSPORT_INIT_FAILURE:
+      return "Failed to initialize network transport";
+    case LGMP_ERR_TRANSPORT_CONNECT_FAILURE:
+      return "Failed to connect to host";
+    case LGMP_ERR_TRANSPORT_DISCONNECTED:
+      return "Network transport disconnected";
+    case LGMP_ERR_TRANSPORT_REJECTED:
+      return "Connection rejected by host "
+             "(is the host running or busy serving another client?)";
+    case LGMP_ERR_TRANSPORT_IO:
+      return "Network transport I/O error";
+    case LGMP_ERR_TRANSPORT_NO_CREDITS:
+      return "No credits available for network transport "
+             "(network or peer may be overloaded, try reducing send rate)";
+    case LGMP_ERR_TRANSPORT_MEM_REG:
+      return "Failed to register memory for network transport";
+    case LGMP_ERR_NOT_SUPPORTED:
+      return "Operation not supported";
+  }
+  return "Invalid status!";
+}

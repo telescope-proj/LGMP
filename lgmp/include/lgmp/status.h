@@ -60,6 +60,8 @@ LGMP_STATUS;
 
 const char * lgmpStatusString(LGMP_STATUS status);
 
+const char * lgmpStatusInfoString(LGMP_STATUS status);
+
 #ifdef __cplusplus
 }
 #endif
