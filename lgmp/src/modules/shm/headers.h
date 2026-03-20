@@ -1,4 +1,4 @@
-/**
+/***
  * LGMP - Looking Glass Memory Protocol
  * Copyright © 2020-2025 Geoffrey McRae <geoff@hostfission.com>
  * https://github.com/gnif/LGMP
