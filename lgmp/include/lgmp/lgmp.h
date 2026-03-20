@@ -21,7 +21,11 @@
 #ifndef LGMP_LGMP_H
 #define LGMP_LGMP_H
 
-// this MUST match the size defined in `src/headers.h`
+/** 
+ * @brief Maximum size of a client-to-host data message in bytes. 
+ *
+ * @warning This must match the size defined in ``src/modules/shm/headers.h``.
+ */
 #define LGMP_MSGS_SIZE 64
 
 #define LGMP_MAX_QUEUES  5

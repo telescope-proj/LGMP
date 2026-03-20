@@ -32,6 +32,18 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Initialize the LGMP client using the shared memory backend.
+ *
+ * @warning This function implicitly calls the lgmpShmClientInit function,
+ *          but lgmpShmClientInit/lgmpFabricClientInit should be used in
+ *          future versions to make the requirements explicit.
+ *
+ * @param mem Pointer to the shared memory region to use for the client.
+ * @param size Size of the shared memory region in bytes.
+ * @param result Pointer to the client to be initialized.
+ * @return LGMP_STATUS
+ */
 LGMP_STATUS lgmpClientInit(void * mem, const size_t size, PLGMPClient * result);
 void        lgmpClientFree(PLGMPClient * client);
 LGMP_STATUS lgmpClientSessionInit(PLGMPClient client, uint32_t * udataSize,
@@ -126,7 +138,7 @@ LGMP_STATUS lgmpClientGetSerial(PLGMPClientQueue queue, uint32_t * serial);
  *              #lgmpHostMemAlloc for fabric-specific queue requirements.
  * @param mem   Pointer to the memory region to attach.
  * @param size  Size of the memory region to attach.
- * @param dmaFd File descriptor for DMABUF memory. Set to -1 for regular memory \
+ * @param dmaFd File descriptor for DMABUF memory. Set to -1 for regular memory
  *              allocations.
  * @return LGMP_STATUS 
  */
