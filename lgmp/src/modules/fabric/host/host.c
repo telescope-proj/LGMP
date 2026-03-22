@@ -8,6 +8,7 @@
 #include "modules/module.h"
 
 #include "fabric.h"
+#include "nfr_uri.h"
 #include "nfr_log.h"
 #include "nfr_mem.h"
 #include "nfr_protocol.h"
@@ -205,17 +206,39 @@ static int lgmpFabric_HostEQProcess(struct NFRResource * res)
 
 // LGMP vtable implementations -------------------------------------------------
 
-LGMP_STATUS lgmpFabricHostInit(const struct NFRInitOpts * opts,
+LGMP_STATUS lgmpFabricHostInit(const char * uri,
     PLGMPHost * result, uint32_t udataSize, uint8_t * udata)
 {
-  if (!opts || !result || !opts->maxQueues)
+  if (!uri || !result || (!udataSize && udata) || (udataSize && !udata))
     return LGMP_ERR_INVALID_ARGUMENT;
 
-  int numChannels = opts->maxQueues + 1; /* +1 for metadata channel */
+  /* Parse the URI into address + transport type */
+  struct sockaddr_in baseAddr;
+  uint8_t            transport;
+  int ret = nfrParseUri(uri, &baseAddr, &transport);
+  if (ret < 0)
+    return LGMP_ERR_INVALID_ARGUMENT;
+
+  int numChannels = LGMP_MAX_QUEUES;
+
+  /* Build NFRInitOpts from the parsed URI */
+  struct NFRInitOpts opts;
+  memset(&opts, 0, sizeof(opts));
+  opts.apiVersion = FI_VERSION(2, 0);
+  opts.flags      = 0;
+  opts.maxQueues  = LGMP_MAX_QUEUES;
+
+  uint16_t basePort = ntohs(baseAddr.sin_port);
+  for (int i = 0; i < numChannels; ++i)
+  {
+    opts.addrs[i]          = baseAddr;
+    opts.addrs[i].sin_port = htons(basePort + i);
+    opts.transportTypes[i] = transport;
+  }
 
   struct NFRResource * res[LGMP_MAX_QUEUES + 1];
   memset(res, 0, sizeof(res));
-  int ret = nfrResourceOpen(opts, numChannels, res);
+  ret = nfrResourceOpen(&opts, numChannels, res);
   if (ret < 0)
   {
     NFR_LOG_DEBUG("Failed to open resources: %d", ret);

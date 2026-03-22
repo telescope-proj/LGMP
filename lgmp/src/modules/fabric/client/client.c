@@ -9,6 +9,7 @@
 #include "modules/module.h"
 
 #include "fabric.h"
+#include "nfr_uri.h"
 #include "nfr_constants.h"
 #include "nfr_log.h"
 #include "nfr_mem.h"
@@ -162,17 +163,46 @@ static int lgmpFabric_ClientResyncBufs(struct LGMPFabricClient * client,
 
 // LGMP vtable implementations -------------------------------------------------
 
-LGMP_STATUS lgmpFabricClientInit(const struct NFRInitOpts * opts,
-    const struct NFRInitOpts * peerInfo, PLGMPClient * result)
+LGMP_STATUS lgmpFabricClientInit(const char * localUri,
+    const char * peerUri, PLGMPClient * result)
 {
-  if (!opts || !peerInfo || !result || !opts->maxQueues)
+  if (!localUri || !peerUri || !result)
     return LGMP_ERR_INVALID_ARGUMENT;
 
-  int numChannels = opts->maxQueues + 1; /* +1 for metadata channel */
+  /* Parse the local URI */
+  struct sockaddr_in localAddr;
+  uint8_t            localTransport;
+  int ret = nfrParseUri(localUri, &localAddr, &localTransport);
+  if (ret < 0)
+    return LGMP_ERR_INVALID_ARGUMENT;
+
+  /* Parse the peer URI */
+  struct sockaddr_in peerAddr;
+  uint8_t            peerTransport;
+  ret = nfrParseUri(peerUri, &peerAddr, &peerTransport);
+  if (ret < 0)
+    return LGMP_ERR_INVALID_ARGUMENT;
+
+  int numChannels = LGMP_MAX_QUEUES + 1; /* +1 for metadata channel */
+
+  /* Build NFRInitOpts from the local URI */
+  struct NFRInitOpts localOpts;
+  memset(&localOpts, 0, sizeof(localOpts));
+  localOpts.apiVersion = FI_VERSION(2, 0);
+  localOpts.flags      = 0;
+  localOpts.maxQueues  = LGMP_MAX_QUEUES;
+
+  uint16_t localBasePort = ntohs(localAddr.sin_port);
+  for (int i = 0; i < numChannels; ++i)
+  {
+    localOpts.addrs[i]          = localAddr;
+    localOpts.addrs[i].sin_port = htons(localBasePort + i);
+    localOpts.transportTypes[i] = localTransport;
+  }
 
   struct NFRResource * res[LGMP_MAX_QUEUES + 1];
   memset(res, 0, sizeof(res));
-  int ret = nfrResourceOpen(opts, numChannels, res);
+  ret = nfrResourceOpen(&localOpts, numChannels, res);
   if (ret < 0)
   {
     NFR_LOG_DEBUG("Failed to open resources: %d", ret);
@@ -223,7 +253,18 @@ LGMP_STATUS lgmpFabricClientInit(const struct NFRInitOpts * opts,
     fc->channels[i].res->connState = NFR_CONN_STATE_READY_TO_CONNECT;
   }
 
-  memcpy(&fc->peerInfo, peerInfo, sizeof(*peerInfo));
+  /* Build peer info from the peer URI */
+  memset(&fc->peerInfo, 0, sizeof(fc->peerInfo));
+  fc->peerInfo.apiVersion = FI_VERSION(2, 0);
+  fc->peerInfo.maxQueues  = LGMP_MAX_QUEUES;
+  uint16_t peerBasePort   = ntohs(peerAddr.sin_port);
+  for (int i = 0; i < numChannels; ++i)
+  {
+    fc->peerInfo.addrs[i]          = peerAddr;
+    fc->peerInfo.addrs[i].sin_port = htons(peerBasePort + i);
+    fc->peerInfo.transportTypes[i] = peerTransport;
+  }
+
   *result = client;
   return LGMP_OK;
 
