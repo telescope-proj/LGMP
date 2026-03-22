@@ -160,7 +160,7 @@ free_mem_aligned:
   return NULL;
 }
 
-#ifdef __linux__
+#if defined(__linux__) && defined(ENABLE_FABRIC_DMABUF) && defined(_GNU_SOURCE)
 
 PNFRMemory nfrRdmaAttachDMABUF(struct NFRResource * res, void * buf,
                                 uint64_t size, int fd)
@@ -317,7 +317,7 @@ PNFRMemory nfrRdmaAllocDMABUF(struct NFRResource * res, uint64_t size,
                                uint64_t acs)
 {
   (void)res; (void)size; (void)acs;
-  NFR_LOG_ERROR("DMABUFs not supported on this platform");
+  NFR_LOG_ERROR("DMABUFs not enabled/supported");
   return NULL;
 }
 #endif
