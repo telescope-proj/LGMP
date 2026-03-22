@@ -32,19 +32,52 @@
 extern "C" {
 #endif
 
+
 /**
- * @brief Initialize the LGMP client using the shared memory backend.
+ * @brief Initialize the shared memory backend. See #lgmpShmClientInit
  *
  * @warning This function implicitly calls the lgmpShmClientInit function,
  *          but lgmpShmClientInit/lgmpFabricClientInit should be used in
  *          future versions to make the requirements explicit.
+ */
+LGMP_STATUS lgmpClientInit(void * mem, const size_t size, PLGMPClient * result);
+
+/**
+ * @brief Initialize the LGMP client using the shared memory backend.
  *
  * @param mem Pointer to the shared memory region to use for the client.
  * @param size Size of the shared memory region in bytes.
  * @param result Pointer to the client to be initialized.
  * @return LGMP_STATUS
  */
-LGMP_STATUS lgmpClientInit(void * mem, const size_t size, PLGMPClient * result);
+LGMP_STATUS lgmpShmClientInit(void * mem, const size_t size, PLGMPClient * result);
+
+/**
+ * @brief Initialize the LGMP client using the fabric backend.
+ *
+ * The URI follows the format ``transport://addr:port?opt=value&opt2=value2``
+ *
+ * The transport may either be **tcp** or **rdma**. In RDMA mode, the network
+ * address MUST always be that of an RDMA-enabled network adapter in order for
+ * the system to bind to the hardware resources of that NIC. Addresses such as
+ * ``0.0.0.0`` or `127.0.0.1`` are invalid!
+ *
+ * NetFR allocates up to ``LGMP_MAX_QUEUES + 1`` ports, starting from the port
+ * number specified in the URI. For example, with 5 queues, using the URI
+ * rdma://10.1.2.3:9000 will allocate port 9000 for the metadata queue, and
+ * 9001-9005 for each LGMP queue. Please ensure that this block of ports is
+ * free before initializing this backend.
+ *
+ * @param localUri URI of the local network interface.
+ * @param peerUri  URI of the remote network interface.
+ * 
+ * @warning The peers must use the same transport.
+ *
+ * @return LGMP_STATUS
+ */
+LGMP_STATUS lgmpFabricClientInit(const char * localUri, const char * peerUri,
+    PLGMPClient * result);
+
 void        lgmpClientFree(PLGMPClient * client);
 LGMP_STATUS lgmpClientSessionInit(PLGMPClient client, uint32_t * udataSize,
     uint8_t ** udata, uint32_t * clientID);
