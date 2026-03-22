@@ -219,7 +219,7 @@ LGMP_STATUS lgmpFabricHostInit(const char * uri,
   if (ret < 0)
     return LGMP_ERR_INVALID_ARGUMENT;
 
-  int numChannels = LGMP_MAX_QUEUES;
+  int numChannels = LGMP_MAX_QUEUES + 1; /* +1 for metadata channel */
 
   /* Build NFRInitOpts from the parsed URI */
   struct NFRInitOpts opts;
