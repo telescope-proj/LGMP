@@ -23,7 +23,7 @@ extern "C" {
    the NetFR library. You can also allocate your own self-managed memory regions
    which do not count towards this limit. However, such regions cannot be used
    with the standard NetFR protocol functions. */
-#define NETFR_MAX_MEM_REGIONS 32
+#define NETFR_MAX_MEM_REGIONS 40
 
 /* The total number of context slots for the NetFR library. A context slot is
    used to store the state of a single operation, a pointer to an exclusively
