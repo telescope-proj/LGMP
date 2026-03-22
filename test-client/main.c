@@ -29,49 +29,23 @@
 
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+
+#ifdef ENABLE_KVMFR
 #include "../kvmfr.h"
+#endif
 
 #include "lgmp/client.h"
 #include "../../lgmp/src/lgmp.h"
 
 void * ram;
 
-int main(int argc, char * argv[])
+int setupIVSHMEM(const char * shmFile, PLGMPClient * result)
 {
-  unsigned int delay = 50;
-  const char * shmFile = NULL;
-  bool error = false;
-
-  int opt;
-  while ((opt = getopt(argc, argv, "f:d:")) != -1) {
-    switch(opt)
-    {
-      case 'f':
-        shmFile = optarg;
-        break;
-
-      case 'd':
-        delay = atoi(optarg) * 1000;
-        break;
-
-      default:
-        error = true;
-        break;
-    }
-  }
-
-  srand(lgmpGetClockMS());
-
-  if (!shmFile || error)
-  {
-    fprintf(stderr, "Invalid usage, expected: -f /dev/shm/file -d N\n");
-    exit(EXIT_FAILURE);
-  }
-
   int fd;
   bool dmabuf = false;
   unsigned devSize;
 
+#ifdef ENABLE_KVMFR
   if (strlen(shmFile) > 8 && memcmp(shmFile, "/dev/kvmfr", 10) == 0)
   {
     dmabuf = true;
@@ -81,6 +55,7 @@ int main(int argc, char * argv[])
     devSize = ioctl(fd, KVMFR_DMABUF_GETSIZE, 0);
   }
   else
+#endif
   {
     struct stat st;
     if (stat(shmFile, &st) != 0)
@@ -105,18 +80,111 @@ int main(int argc, char * argv[])
     goto out_close;
   }
 
-  PLGMPClient client;
   LGMP_STATUS status;
-  while((status = lgmpClientInit(ram, devSize, &client))
-      != LGMP_OK)
+  if ((status = lgmpClientInit(ram, devSize, result)) != LGMP_OK)
   {
     printf("lgmpClientInit %s\n", lgmpStatusString(status));
     goto out_unmap;
   }
 
+  return 0;
+
+out_unmap:
+  munmap(ram, devSize);
+out_close:
+  close(fd);
+  return -1;
+}
+
+#ifdef ENABLE_FABRIC
+int setupFabric(const char * localUri, const char * remoteUri,
+    PLGMPClient * result)
+{
+  LGMP_STATUS status;
+  status = lgmpFabricClientInit(localUri, remoteUri, result);
+  if (status != LGMP_OK)
+  {
+    printf("Failed to initialize fabric: %s\n", lgmpStatusString(status));
+    return -1;
+  }
+  return 0;
+}
+#endif
+
+int main(int argc, char * argv[])
+{
+  unsigned int delay = 50;
+  const char * shmFile = NULL;
+#ifdef ENABLE_FABRIC
+  const char * localUri = NULL;
+  const char * remoteUri = NULL;
+#endif
+  bool error = false;
+
+  int opt;
+  while ((opt = getopt(argc, argv, "f:d:"
+#ifdef ENABLE_FABRIC
+    "l:r:"
+#endif
+  )) != -1) {
+    switch(opt)
+    {
+      case 'f':
+        shmFile = optarg;
+        break;
+
+      case 'd':
+        delay = atoi(optarg) * 1000;
+        break;
+
+#ifdef ENABLE_FABRIC
+      case 'l':
+        localUri = optarg;
+        break;
+
+      case 'r':
+        remoteUri = optarg;
+        break;
+#endif
+
+      default:
+        error = true;
+        break;
+    }
+  }
+
+  srand(lgmpGetClockMS());
+
+  PLGMPClient client;
+#ifdef ENABLE_FABRIC
+  if (localUri && remoteUri)
+  {
+    int ret = setupFabric(localUri, remoteUri, &client);
+    if (ret != 0)
+      return 1;
+  }
+  else
+#endif
+  if (shmFile)
+  {
+    int ret = setupIVSHMEM(shmFile, &client);
+    if (ret != 0)
+      return 1;
+  }
+  else
+  {
+    fprintf(stderr, "Invalid usage, expected: -f /dev/shm/file [-d N]"
+#ifdef ENABLE_FABRIC
+      " or -l local_uri -r remote_uri [-d N]"
+#endif
+      "\n");
+    exit(EXIT_FAILURE);
+  }
+
   uint32_t   udataSize;
   uint8_t  * udata;
   uint32_t   clientID;
+  LGMP_STATUS status;
   while((status = lgmpClientSessionInit(client, &udataSize, &udata, &clientID))
       != LGMP_OK)
   {
@@ -226,10 +294,6 @@ out_unsub:
     lgmpClientUnsubscribe(&queue);
 out_lgmpclient:
   lgmpClientFree(&client);
-out_unmap:
-  munmap(ram, devSize);
-out_close:
-  close(fd);
 out:
   return 0;
 }

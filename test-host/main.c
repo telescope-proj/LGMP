@@ -32,8 +32,10 @@ void * ram;
 #define SHARED_FILE "/dev/shm/lgmp-test"
 #define RAM_SIZE (10*1048576)
 
-int main(int argc, char * argv[])
+int setupIVSHMEM(const char * shmFile, uint8_t * udata, int udataSize, PLGMPHost * result)
 {
+  LGMP_STATUS status;
+
   int fd = open(SHARED_FILE, O_RDWR | O_CREAT, (mode_t)0600);
   if (fd < 0)
   {
@@ -54,18 +56,69 @@ int main(int argc, char * argv[])
     goto out_close;
   }
 
-  PLGMPHost host;
-  LGMP_STATUS status;
-
-  uint8_t udata[32];
-  memset(udata, 0xaa, sizeof(udata));
-
-  if ((status = lgmpHostInit(ram, RAM_SIZE, &host, sizeof(udata), udata))
-      != LGMP_OK)
+  status = lgmpHostInit(ram, RAM_SIZE, result, udataSize, udata);
+  if (status != LGMP_OK)
   {
     printf("lgmpHostInit failed: %s\n", lgmpStatusString(status));
     goto out_unmap;
   }
+
+  return (int) status;
+
+out_unmap:
+  munmap(ram, RAM_SIZE);
+out_close:
+  close(fd);
+  return -1;
+}
+
+#ifdef ENABLE_FABRIC
+int setupFabric(const char * uri, uint8_t * udata, int udataSize, PLGMPHost * result)
+{
+  LGMP_STATUS status;
+  status = lgmpFabricHostInit(uri, result, udataSize, udata);
+  if (status != LGMP_OK)
+  {
+    printf("Failed to initialize fabric: %s\n", lgmpStatusString(status));
+    return -1;
+  }
+}
+#endif
+
+int main(int argc, char * argv[])
+{
+  PLGMPHost host;
+  LGMP_STATUS status;
+  int ret;
+
+  const char * localUri = NULL;
+
+  uint8_t udata[32];
+  memset(udata, 0xaa, sizeof(udata));
+
+#ifdef ENABLE_FABRIC
+  int opt;
+  while ((opt = getopt(argc, argv, "l:")) != -1) {
+    switch(opt)
+    {
+      case 'l':
+        localUri = optarg;
+        break;
+
+      default:
+        fprintf(stderr, "Invalid usage, expected: [-l local_uri]\n");
+        exit(EXIT_FAILURE);
+    }
+  }
+
+  if (localUri)
+    ret = setupFabric(localUri, udata, sizeof(udata), &host);
+  else
+#endif
+    ret = setupIVSHMEM(SHARED_FILE, udata, sizeof(udata), &host);
+
+  if (ret != 0)
+    return -1;
 
   const struct LGMPQueueConfig conf =
   {
@@ -84,13 +137,12 @@ int main(int argc, char * argv[])
   PLGMPMemory mem[10] = { 0 };
   for(int i = 0; i < 10; ++i)
   {
-    if ((status = lgmpHostMemAlloc(host, 1024, &mem[i])) != LGMP_OK)
+    if ((status = lgmpHostMemAlloc(queue, 1024, &mem[i])) != LGMP_OK)
     {
       printf("lgmpHostAlloc failed: %s\n", lgmpStatusString(status));
       goto out_lgmphost;
     }
   }
-
 
   sprintf(lgmpHostMemPtr(mem[0]), "This is a test from the host application");
   sprintf(lgmpHostMemPtr(mem[1]), "With multiple buffers");
@@ -161,10 +213,6 @@ int main(int argc, char * argv[])
 
 out_lgmphost:
   lgmpHostFree(&host);
-out_unmap:
-  munmap(ram, RAM_SIZE);
-out_close:
-  close(fd);
 out:
   return 0;
 }
