@@ -10,10 +10,20 @@
 #include "lgmp/client.h"
 #include "lgmp/host.h"
 
+#include "modules/shm/module.h"
+
+#ifdef ENABLE_FABRIC
+#include "modules/fabric/module.h"
+#endif
+
+
 typedef enum
 {
   LGMP_MODULE_TYPE_INVALID, 
-  LGMP_MODULE_TYPE_SHM
+  LGMP_MODULE_TYPE_SHM,
+#ifdef ENABLE_FABRIC
+  LGMP_MODULE_TYPE_FABRIC,
+#endif
 } 
 LGMPModuleType;
 
@@ -70,10 +80,7 @@ struct LGMPHostQueueOps {
     void *      (*memPtr)(PLGMPMemory mem);
 };
 
-extern const struct LGMPClientInterface lgmpShmClientInterface;
-extern const struct LGMPClientQueueOps  lgmpShmClientQueueOps;
-extern const struct LGMPHostInterface   lgmpShmHostInterface;
-extern const struct LGMPHostQueueOps    lgmpShmHostQueueOps;
+
 
 LGMP_STATUS lgmpShmClientInit(void * mem, const size_t size,
   PLGMPClient * result);
