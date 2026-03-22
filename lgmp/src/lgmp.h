@@ -22,6 +22,7 @@
 #define LGMP_PRIVATE_LGMP_H
 
 #include "lgmp/lgmp.h"
+#include <stdint.h>
 #include <stdlib.h>
 
 #if defined(_WIN32)
