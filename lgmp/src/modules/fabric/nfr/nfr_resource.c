@@ -149,7 +149,7 @@ int nfrResourceCQProcess(struct NFRResource *       res,
   int nComp     = 0;
   int totalComp = 0;
 
-  struct NFRFabricContext * ctx;
+  struct NFRFabricContext * ctx = NULL;
   do
   {
     cqe->entry.data.op_context = 0;
