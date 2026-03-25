@@ -31,7 +31,11 @@ inline static int nfrGetSlotBase(struct NFRCommBufInfo info, uint8_t type,
       if (slotCount)
         *slotCount = info.ackSlots;
       return NFR_ACK_SLOT_BASE(info);
-    default: assert(!"Invalid operation type"); return -1;
+    default: 
+      assert(!"Invalid operation type"); 
+      if (slotCount)
+        *slotCount = -1;
+      return -1;
   }
 }
 
@@ -39,11 +43,16 @@ struct NFRFabricContext * nfrContextGet(struct NFRResource * res,
                                          uint8_t opType, uint8_t * index)
 {
   assert(res);
-  int endIndex;
+  int endIndex = 0;
   int i = nfrGetSlotBase(res->commBuf.info, opType, &endIndex);
   endIndex += i;
   assert(i >= 0);
   assert(endIndex <= NFR_TOTAL_SLOTS(res->commBuf.info));
+
+  if (i <= 0 || endIndex <= 0)
+  {
+    return NULL;
+  }
 
   for (; i < endIndex; ++i)
   {
@@ -56,7 +65,7 @@ struct NFRFabricContext * nfrContextGet(struct NFRResource * res,
       return res->commBuf.ctx + i;
     }
   }
-  return 0;
+  return NULL;
 }
 
 int nfrGetContextLocation(void * op_context, struct NFRResource * res,
