@@ -147,6 +147,26 @@ void nfrClientProcessInternalRx(struct NFRFabricContext * ctx)
       NFR_RESET_CONTEXT(ctx);
       return;
     }
+    case NFR_MSG_HOST_INIT_DATA:
+    {
+      struct NFRMsgHostInitData * initMsg = (struct NFRMsgHostInitData *) hdr;
+      if (initMsg->udataSize > sizeof(client->udata))
+      {
+        NFR_LOG_ERROR("Host sent oversized init data (%u bytes)",
+                      initMsg->udataSize);
+        goto disconnect_peer;
+      }
+      client->clientID  = initMsg->clientID;
+      client->sessionID = initMsg->sessionID;
+      client->udataSize = initMsg->udataSize;
+      if (initMsg->udataSize > 0)
+        memcpy(client->udata, initMsg->udata, initMsg->udataSize);
+      client->initDataReceived = true;
+      NFR_LOG_DEBUG("Received init data: clientID=%u sessionID=%u udataSize=%u",
+                    initMsg->clientID, initMsg->sessionID, initMsg->udataSize);
+      NFR_RESET_CONTEXT(ctx);
+      return;
+    }
     default:
     {
       NFR_LOG_ERROR("Host sent unknown message type %d", hdr->type);

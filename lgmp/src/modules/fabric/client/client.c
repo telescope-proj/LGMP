@@ -340,11 +340,24 @@ static LGMP_STATUS lgmpFabricClientSessionInit(PLGMPClient client,
   if (connOk != fc->numChannels)
     return LGMP_ERR_TRANSPORT_CONNECT_FAILURE;
 
-  client->id        = nfrGetRandomUint32();
-  client->sessionID = nfrGetRandomUint32();
-  if (udataSize) *udataSize = 0;
-  if (udata)     *udata     = NULL;
-  if (clientID)  *clientID  = client->id;
+  /* Poll the metadata channel for the init data message from the host */
+  if (!fc->initDataReceived)
+  {
+    struct LGMPFabricClientChannel * metaCh = &fc->channels[0];
+    struct NFR_CallbackInfo cbInfo = {0};
+    cbInfo.callback                        = nfrClientProcessInternalRx;
+    cbInfo.uData[NFR_CLIENT_RX_CB_CHANNEL] = metaCh;
+    nfrChannelPoll(metaCh->res, &cbInfo);
+
+    if (!fc->initDataReceived)
+      return LGMP_ERR_TRANSPORT_CONNECT_FAILURE;
+  }
+
+  client->id        = fc->clientID;
+  client->sessionID = fc->sessionID;
+  if (udataSize) *udataSize = fc->udataSize;
+  if (udata)     *udata     = fc->udata;
+  if (clientID)  *clientID  = fc->clientID;
 
   return LGMP_OK;
 }

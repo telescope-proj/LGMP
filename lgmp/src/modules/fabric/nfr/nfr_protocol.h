@@ -24,6 +24,7 @@ enum NFRMessageType {
   NFR_MSG_HOST_DATA_ACK,
   NFR_MSG_CLIENT_SUBSCRIBE,
   NFR_MSG_CLIENT_UNSUBSCRIBE,
+  NFR_MSG_HOST_INIT_DATA,
   NFR_MSG_MAX
 };
 
@@ -206,5 +207,19 @@ struct NFRMsgClientUnsubscribe {
 
 _Static_assert(sizeof(struct NFRMsgClientUnsubscribe) == 16, 
                "NFRMsgClientUnsubscribe size mismatch");
+
+// NFRMsgHostInitData, server -> client (metadata channel)
+
+struct NFRMsgHostInitData {
+  struct NFRHeader    header;
+  alignas(4) uint32_t clientID;
+  alignas(4) uint32_t sessionID;
+  alignas(4) uint32_t udataSize;
+  alignas(8) uint8_t  udata[NFR_HOST_MAX_UDATA];
+};
+
+_Static_assert(sizeof(struct NFRMsgHostInitData) <=
+               NETFR_MESSAGE_MAX_SIZE,
+               "NFRMsgHostInitData must fit in a single message");
 
 #endif

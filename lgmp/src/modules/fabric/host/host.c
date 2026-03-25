@@ -193,6 +193,7 @@ static int lgmpFabric_HostEQProcess(struct NFRResource * res)
             break;
           }
         }
+        fh->initDataSent = false;
       }
 
       NFR_LOG_DEBUG("Client disconnected");
@@ -402,13 +403,57 @@ static LGMP_STATUS lgmpFabricHostProcess(PLGMPHost host)
     nfrChannelPoll(res, &cbInfo);
   }
 
+  /* Once all channels are connected, send the init data to the client on the
+     metadata channel once per connection. */
+  if (!fh->initDataSent)
+  {
+    bool allConnected = true;
+    for (int i = 0; i < fh->numChannels; ++i)
+    {
+      if (!fh->channels[i].res ||
+          fh->channels[i].res->connState != NFR_CONN_STATE_CONNECTED)
+      {
+        allConnected = false;
+        break;
+      }
+    }
+
+    if (allConnected)
+    {
+      struct LGMPFabricHostChannel * metaCh = &fh->channels[0];
+      struct NFRMsgHostInitData msg;
+      nfrSetHeader(&msg.header, NFR_MSG_HOST_INIT_DATA);
+      msg.clientID  = nfrGetRandomUint32();
+      msg.sessionID = host->sessionID;
+      msg.udataSize = host->udataSize;
+      memset(msg.udata, 0, sizeof(msg.udata));
+      if (host->udata && host->udataSize > 0)
+      {
+        uint32_t copySize = host->udataSize;
+        if (copySize > NFR_HOST_MAX_UDATA)
+          copySize = NFR_HOST_MAX_UDATA;
+        memcpy(msg.udata, host->udata, copySize);
+        msg.udataSize = copySize;
+      }
+
+      void * uData[NFR_TOTAL_CB_UDATA_COUNT];
+      memset(uData, 0, sizeof(uData));
+      uData[NFR_HOST_TX_CB_CHANNEL] = metaCh;
+
+      ssize_t ret = nfrSendMessage(metaCh->res, &msg, sizeof(msg),
+                                   nfrHostProcessInternalTx, uData);
+      if (ret >= 0)
+        fh->initDataSent = true;
+    }
+  }
+
   return LGMP_OK;
 }
 
 static LGMP_STATUS lgmpFabricHostQueueNew(PLGMPHost host,
     const struct LGMPQueueConfig config, PLGMPHostQueue * result)
 {
-  /* Queues map 1:1 to channels. Queue index N uses channel N+1
+  /* Queues map 1:1 to channels. Queue ID N uses channel N+1
      (channel 0 is reserved for metadata). */
   assert(host);
   assert(result);
@@ -419,7 +464,7 @@ static LGMP_STATUS lgmpFabricHostQueueNew(PLGMPHost host,
     return LGMP_ERR_NO_QUEUES;
 
   unsigned int idx = host->numQueues++;
-  int channelIdx   = idx + NFR_QUEUE_CHANNEL_BASE;
+  int channelIdx   = config.queueID + NFR_QUEUE_CHANNEL_BASE;
 
   if (channelIdx >= fh->numChannels)
     return LGMP_ERR_NO_QUEUES;
@@ -431,7 +476,6 @@ static LGMP_STATUS lgmpFabricHostQueueNew(PLGMPHost host,
   queue->index    = idx;
   queue->internal = &fh->channels[channelIdx];
 
-  (void)config;
   return LGMP_OK;
 }
 
@@ -466,8 +510,18 @@ static uint32_t lgmpFabricHostQueueNewSubs(PLGMPHostQueue queue)
 
 static uint32_t lgmpFabricHostQueuePending(PLGMPHostQueue queue)
 {
-  (void)queue;
-  return 0;
+  assert(queue);
+  struct LGMPFabricHostChannel * ch = queue->internal;
+  if (!ch || !ch->res)
+    return 0;
+
+  uint32_t pending = 0;
+  for (int i = 0; i < NETFR_MAX_MEM_REGIONS; ++i)
+    if (ch->clientRegions[i].state == NFR_RMEM_BUSY_LOCAL ||
+        ch->clientRegions[i].state == NFR_RMEM_BUSY_REMOTE)
+      ++pending;
+
+  return pending;
 }
 
 static LGMP_STATUS lgmpFabricHostQueuePostSized(PLGMPHostQueue queue,

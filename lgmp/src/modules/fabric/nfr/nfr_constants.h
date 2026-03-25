@@ -96,6 +96,9 @@ enum {
 
 #define NFR_INTERNAL_CB_INDEX 0
 
+/* The maximum length of user data which can be included during session init. */
+#define NFR_HOST_MAX_UDATA 3072
+
 enum ContextState {
   CTX_STATE_INVALID,
 

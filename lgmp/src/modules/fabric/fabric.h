@@ -33,6 +33,7 @@ struct LGMPFabricHostChannel {
 struct LGMPFabricHost {
   struct LGMPFabricHostChannel channels[LGMP_MAX_QUEUES + 1];
   uint8_t  numChannels;
+  bool     initDataSent;
   uint64_t maxRegionAlloc;
   uint64_t maxTotalAlloc;
 };
@@ -54,9 +55,14 @@ struct LGMPFabricClientChannel {
 struct LGMPFabricClient {
   struct LGMPFabricClientChannel channels[LGMP_MAX_QUEUES + 1];
   uint8_t                        numChannels;
-  struct NFRInitOpts              peerInfo;
-  uint64_t maxRegionAlloc;
-  uint64_t maxTotalAlloc;
+  bool                           initDataReceived;
+  uint32_t                       clientID;
+  uint32_t                       sessionID;
+  uint32_t                       udataSize;
+  struct NFRInitOpts             peerInfo;
+  uint64_t                       maxRegionAlloc;
+  uint64_t                       maxTotalAlloc;
+  uint8_t                        udata[NFR_HOST_MAX_UDATA];
 };
 
 // Fabric Memory ---------------------------------------------------------------
