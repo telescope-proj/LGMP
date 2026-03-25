@@ -643,6 +643,9 @@ ssize_t nfrPostTransfer(struct NFRResource * res, struct NFR_TransferInfo * ti)
   struct NFRFabricContext * wctx = 0;
   struct fid_ep *           ep   = res->ep;
 
+  if (!ep)
+    return -ENOTCONN;
+
   NFR_LOG_TRACE("Posting transfer of type %d on resource %p", ti->opType, res);
 
   switch (ti->opType)
