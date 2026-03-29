@@ -107,7 +107,7 @@ int nfrPrintCQError(int logLevel, const char * func, const char * file,
   if (!res || !err)
     return -EINVAL;
 
-  if (nfrLogLevel > logLevel)
+  if (lgmpLogLevel > logLevel)
     return 0;
 
   char    errStr[128] = {0};
@@ -129,7 +129,7 @@ int nfrPrintCQError(int logLevel, const char * func, const char * file,
     default: slotType = "unknown"; break;
   }
 
-  nfrLog(logLevel, func, file, line,
+  lgmpLog(logLevel, func, file, line,
           "CQ Err ch[%d]->ctx[%d] (%s) / %s (%d) "
           "/ ProvErr: %s (%d)",
           channel, ctxPos, slotType, fi_strerror(-err->err), err->err,

@@ -7,6 +7,7 @@ set(SOURCES
 	src/host.c
 	src/client.c
 	src/status.c
+	src/log.c
 	src/modules/shm/host.c
 	src/modules/shm/client.c
 )
@@ -19,7 +20,6 @@ if(ENABLE_FABRIC)
     src/modules/fabric/host/host_callback.c
     src/modules/fabric/client/client.c
     src/modules/fabric/client/client_callback.c
-    src/modules/fabric/nfr/nfr_log.c
     src/modules/fabric/nfr/nfr_mem.c
     src/modules/fabric/nfr/nfr_resource.c
   )

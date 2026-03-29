@@ -41,6 +41,19 @@ typedef struct LGMPHostQueue   * PLGMPHostQueue;
 typedef struct LGMPClientQueue * PLGMPClientQueue;
 typedef struct LGMPMemory      * PLGMPMemory;
 
+enum
+{
+  LGMP_LOG_LEVEL_TRACE,
+  LGMP_LOG_LEVEL_DEBUG,
+  LGMP_LOG_LEVEL_INFO,
+  LGMP_LOG_LEVEL_WARNING,
+  LGMP_LOG_LEVEL_ERROR,
+  LGMP_LOG_LEVEL_FATAL,
+  LGMP_LOG_LEVEL_OFF
+};
+
+void lgmpSetLogLevel(int level);
+
 #ifdef __cplusplus
 }
 #endif

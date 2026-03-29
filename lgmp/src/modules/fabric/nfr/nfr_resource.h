@@ -40,7 +40,7 @@ typedef struct NFRHost *         PNFRHost;
 typedef struct NFRMemory *       PNFRMemory;
 typedef struct NFRRemoteMemory * PNFRRemoteMemory;
 
-extern int nfrLogLevel;
+extern int lgmpLogLevel;
 
 #define BETWEEN_EXCL(x, a, b) ((x) > (a) && (x) < (b))
 #define BETWEEN_INCL(x, a, b) ((x) >= (a) && (x) <= (b))
@@ -79,7 +79,6 @@ struct NFRInitOpts {
 void nfrReleaseMemory(PNFRMemory * mem);
 void nfrAckBuffer(PNFRMemory mem);
 void nfrFreeMemory(PNFRMemory * mem);
-void nfrSetLogLevel(int level);
 
 /* ---- Internal Types ---- */
 

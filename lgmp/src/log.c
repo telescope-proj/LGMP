@@ -1,31 +1,30 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (c) 2026 Tim Dettmar <beanfacts@protonmail.com>
 
-#include "nfr_log.h"
+#include "log.h"
 #include "lgmp.h"
-#include "nfr_constants.h"
 
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
-int nfrLogLevel = NFR_LOG_LEVEL_OFF;
+int lgmpLogLevel = LGMP_LOG_LEVEL_OFF;
 
-void nfrLog(int level, const char * func, const char * file, int line,
+void lgmpLog(int level, const char * func, const char * file, int line,
              const char * fmt, ...)
 {
-  if (level < nfrLogLevel)
+  if (level < lgmpLogLevel)
     return;
   const char * levelStr;
   switch (level)
   {
-    case NFR_LOG_LEVEL_TRACE: levelStr = "T "; break;
-    case NFR_LOG_LEVEL_DEBUG: levelStr = "D "; break;
-    case NFR_LOG_LEVEL_INFO: levelStr = "I "; break;
-    case NFR_LOG_LEVEL_WARNING: levelStr = "!W"; break;
-    case NFR_LOG_LEVEL_ERROR: levelStr = "!E"; break;
-    case NFR_LOG_LEVEL_FATAL: levelStr = "!F"; break;
+    case LGMP_LOG_LEVEL_TRACE: levelStr = "T "; break;
+    case LGMP_LOG_LEVEL_DEBUG: levelStr = "D "; break;
+    case LGMP_LOG_LEVEL_INFO: levelStr = "I "; break;
+    case LGMP_LOG_LEVEL_WARNING: levelStr = "!W"; break;
+    case LGMP_LOG_LEVEL_ERROR: levelStr = "!E"; break;
+    case LGMP_LOG_LEVEL_FATAL: levelStr = "!F"; break;
     default: levelStr = "Unknown"; break;
   }
   const char * filename = strrchr(file, '/');
@@ -43,4 +42,4 @@ void nfrLog(int level, const char * func, const char * file, int line,
   fprintf(stderr, "\n");
 }
 
-void nfrSetLogLevel(int level) { nfrLogLevel = level; }
+void lgmpSetLogLevel(int level) { lgmpLogLevel = level; }

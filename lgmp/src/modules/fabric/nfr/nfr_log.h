@@ -4,28 +4,14 @@
 #ifndef NETFR_PRIVATE_LOG_H
 #define NETFR_PRIVATE_LOG_H
 
-unsigned long getTimestamp(void);
+#include "log.h"
 
-void nfrLog(int level, const char * func, const char * file, int line,
-             const char * fmt, ...);
-
-#define NFR_LOG_TRACE(fmt, ...)                                                \
-  nfrLog(NFR_LOG_LEVEL_TRACE, __func__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-
-#define NFR_LOG_DEBUG(fmt, ...)                                                \
-  nfrLog(NFR_LOG_LEVEL_DEBUG, __func__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-
-#define NFR_LOG_INFO(fmt, ...)                                                 \
-  nfrLog(NFR_LOG_LEVEL_INFO, __func__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-
-#define NFR_LOG_WARNING(fmt, ...)                                              \
-  nfrLog(NFR_LOG_LEVEL_WARNING, __func__, __FILE__, __LINE__, fmt,            \
-          ##__VA_ARGS__)
-
-#define NFR_LOG_ERROR(fmt, ...)                                                \
-  nfrLog(NFR_LOG_LEVEL_ERROR, __func__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-
-#define NFR_LOG_FATAL(fmt, ...)                                                \
-  nfrLog(NFR_LOG_LEVEL_FATAL, __func__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+/* Aliases so existing fabric code doesn't need to change */
+#define NFR_LOG_TRACE   LGMP_LOG_TRACE
+#define NFR_LOG_DEBUG   LGMP_LOG_DEBUG
+#define NFR_LOG_INFO    LGMP_LOG_INFO
+#define NFR_LOG_WARNING LGMP_LOG_WARNING
+#define NFR_LOG_ERROR   LGMP_LOG_ERROR
+#define NFR_LOG_FATAL   LGMP_LOG_FATAL
 
 #endif

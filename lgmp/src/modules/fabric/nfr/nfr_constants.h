@@ -4,6 +4,9 @@
 #ifndef NETFR_PRIVATE_CONSTANTS_H
 #define NETFR_PRIVATE_CONSTANTS_H
 
+// For logging only
+#include "lgmp/lgmp.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -65,14 +68,15 @@ extern "C" {
    credit count. */
 #define NETFR_RESERVED_CREDIT_COUNT 8
 
+/* Preserved for compatibility */
 enum {
-  NFR_LOG_LEVEL_TRACE,
-  NFR_LOG_LEVEL_DEBUG,
-  NFR_LOG_LEVEL_INFO,
-  NFR_LOG_LEVEL_WARNING,
-  NFR_LOG_LEVEL_ERROR,
-  NFR_LOG_LEVEL_FATAL,
-  NFR_LOG_LEVEL_OFF
+  NFR_LOG_LEVEL_TRACE   = LGMP_LOG_LEVEL_TRACE,
+  NFR_LOG_LEVEL_DEBUG   = LGMP_LOG_LEVEL_DEBUG,
+  NFR_LOG_LEVEL_INFO    = LGMP_LOG_LEVEL_INFO,
+  NFR_LOG_LEVEL_WARNING = LGMP_LOG_LEVEL_WARNING,
+  NFR_LOG_LEVEL_ERROR   = LGMP_LOG_LEVEL_ERROR,
+  NFR_LOG_LEVEL_FATAL   = LGMP_LOG_LEVEL_FATAL,
+  NFR_LOG_LEVEL_OFF     = LGMP_LOG_LEVEL_OFF
 };
 
 /* ---- Private Constants ---- */
