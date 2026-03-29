@@ -49,7 +49,7 @@ struct NFRFabricContext * nfrContextGet(struct NFRResource * res,
   assert(i >= 0);
   assert(endIndex <= NFR_TOTAL_SLOTS(res->commBuf.info));
 
-  if (i <= 0 || endIndex <= 0)
+  if (i < 0 || endIndex <= 0)
   {
     return NULL;
   }
@@ -739,6 +739,9 @@ ssize_t nfrPostTransfer(struct NFRResource * res, struct NFR_TransferInfo * ti)
         NFR_RESET_CONTEXT(ctx);
         return ret;
       }
+
+      if (ti->cbInfo)
+        memcpy(&ctx->cbInfo, ti->cbInfo, sizeof(*ti->cbInfo));
 
       NFR_LOG_TRACE("Receive op posted, ctx %p, wctx %p", ctx, wctx);
       break;
