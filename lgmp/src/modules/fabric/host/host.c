@@ -688,7 +688,7 @@ static LGMP_STATUS lgmpFabricHostMemAllocAligned(PLGMPHostQueue queue,
     return LGMP_ERR_TRANSPORT_DISCONNECTED;
 
   PNFRMemory nfrMem = nfrRdmaAttach(
-    ch->res, 0, size, 0, FI_READ | FI_WRITE | FI_REMOTE_WRITE, 
+    ch->res, 0, size, alignment, FI_READ | FI_WRITE | FI_REMOTE_WRITE, 
     NFR_MEM_TYPE_SYSTEM_MANAGED, MEM_STATE_AVAILABLE_UNSYNCED
   );
   if (!nfrMem)
