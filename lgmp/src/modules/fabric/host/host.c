@@ -707,6 +707,44 @@ static LGMP_STATUS lgmpFabricHostMemAllocAligned(PLGMPHostQueue queue,
   mem->size     = size;
   mem->mem      = nfrMem->addr;
   mem->internal = nfrMem;
+  mem->dmaFd    = -1;
+
+  struct LGMPFabricHost * fh = queue->host->internal;
+  lgmpFabric_HostSendBufferState(fh, ch);
+
+  return LGMP_OK;
+}
+
+static LGMP_STATUS lgmpFabricHostMemAllocDMABUF(PLGMPHostQueue queue,
+    uint32_t size, PLGMPMemory * result)
+{
+  assert(queue);
+  assert(result);
+
+  struct LGMPFabricHostChannel * ch = queue->internal;
+  if (!ch->res)
+    return LGMP_ERR_TRANSPORT_DISCONNECTED;
+
+  PNFRMemory nfrMem = nfrRdmaAllocDMABUF(
+    ch->res, size, FI_READ | FI_WRITE | FI_REMOTE_WRITE
+  );
+  if (!nfrMem)
+    return LGMP_ERR_TRANSPORT_MEM_REG;
+
+  *result = calloc(1, sizeof(**result));
+  if (!*result)
+  {
+    nfrFreeMemory(&nfrMem);
+    return LGMP_ERR_NO_MEM;
+  }
+
+  PLGMPMemory mem = *result;
+  mem->queue    = queue;
+  mem->offset   = 0;
+  mem->size     = size;
+  mem->mem      = nfrMem->addr;
+  mem->internal = nfrMem;
+  mem->dmaFd    = nfrMem->dmaFd;
 
   struct LGMPFabricHost * fh = queue->host->internal;
   lgmpFabric_HostSendBufferState(fh, ch);
@@ -763,7 +801,8 @@ const struct LGMPHostQueueOps lgmpFabricHostQueueOps =
   .getClientIDs    = lgmpFabricHostGetClientIDs,
   .memAvail        = lgmpFabricHostMemAvail,
   .memAlloc        = lgmpFabricHostMemAlloc,
-  .memAllocAligned = lgmpFabricHostMemAllocAligned,
-  .memFree         = lgmpFabricHostMemFree,
+  .memAllocAligned  = lgmpFabricHostMemAllocAligned,
+  .memAllocDMABUF   = lgmpFabricHostMemAllocDMABUF,
+  .memFree          = lgmpFabricHostMemFree,
   .memPtr          = lgmpFabricHostMemPtr,
 };

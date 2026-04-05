@@ -123,6 +123,20 @@ LGMP_STATUS lgmpHostMemAllocAligned(PLGMPHostQueue queue, uint32_t size,
   return queue->ops->memAllocAligned(queue, size, alignment, result);
 }
 
+LGMP_STATUS lgmpHostMemAllocDMABUF(PLGMPHostQueue queue, uint32_t size,
+    PLGMPMemory * result)
+{
+  assert(queue);
+  assert(result);
+  return queue->ops->memAllocDMABUF(queue, size, result);
+}
+
+int lgmpHostDMAFD(PLGMPMemory mem)
+{
+  assert(mem);
+  return mem->dmaFd;
+}
+
 void lgmpHostMemFree(PLGMPMemory * mem)
 {
   assert(mem);

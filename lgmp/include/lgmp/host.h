@@ -151,6 +151,27 @@ LGMP_STATUS lgmpHostMemAllocAligned(PLGMPHostQueue queue, uint32_t size,
     uint32_t alignment, PLGMPMemory * result);
 
 /**
+ * @brief Allocate a DMABUF-backed memory block for RDMA operations.
+ *
+ * @note Only supported by the fabric backend. Returns
+ *       #LGMP_ERR_NOT_SUPPORTED on the SHM backend.
+ *
+ * @param queue  LGMP queue to allocate memory from
+ * @param size   Size of the memory to allocate
+ * @param result The allocated memory region
+ */
+LGMP_STATUS lgmpHostMemAllocDMABUF(PLGMPHostQueue queue, uint32_t size,
+    PLGMPMemory * result);
+
+/**
+ * @brief Get the DMABUF file descriptor for a DMABUF-backed memory block.
+ *
+ * @param mem Memory block allocated with #lgmpHostMemAllocDMABUF.
+ * @return    The DMABUF file descriptor, or -1 if @p mem is not DMABUF-backed.
+ */
+int lgmpHostDMAFD(PLGMPMemory mem);
+
+/**
  * @brief Free a memory block.
  *
  * @warning Calling this function only frees the #LGMPMemory structure, but

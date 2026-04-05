@@ -76,6 +76,8 @@ struct LGMPHostQueueOps {
       PLGMPMemory * result);
     LGMP_STATUS (*memAllocAligned)(PLGMPHostQueue queue, uint32_t size,
       uint32_t alignment, PLGMPMemory * result);
+    LGMP_STATUS (*memAllocDMABUF)(PLGMPHostQueue queue, uint32_t size,
+        PLGMPMemory * result);
     void        (*memFree)(PLGMPMemory * mem);
     void *      (*memPtr)(PLGMPMemory mem);
 };

@@ -358,11 +358,19 @@ static LGMP_STATUS lgmpShmHostMemAllocAligned(PLGMPHostQueue queue,
   mem->offset = nextFree;
   mem->size   = size;
   mem->mem    = shm->mem + nextFree;
+  mem->dmaFd  = -1;
 
   shm->avail   -= (nextFree - shm->nextFree) + size;
   shm->nextFree = nextFree + size;
 
   return LGMP_OK;
+}
+
+static LGMP_STATUS lgmpShmHostMemAllocDMABUF(PLGMPHostQueue queue,
+    uint32_t size, PLGMPMemory * result)
+{
+  (void)queue; (void)size; (void)result;
+  return LGMP_ERR_NOT_SUPPORTED;
 }
 
 static void lgmpShmHostMemFree(PLGMPMemory * mem)
@@ -542,7 +550,8 @@ const struct LGMPHostQueueOps lgmpShmHostQueueOps =
   .getClientIDs    = lgmpShmHostGetClientIDs,
   .memAvail        = lgmpShmHostMemAvail,
   .memAlloc        = lgmpShmHostMemAlloc,
-  .memAllocAligned = lgmpShmHostMemAllocAligned,
-  .memFree         = lgmpShmHostMemFree,
+  .memAllocAligned  = lgmpShmHostMemAllocAligned,
+  .memAllocDMABUF   = lgmpShmHostMemAllocDMABUF,
+  .memFree          = lgmpShmHostMemFree,
   .memPtr          = lgmpShmHostMemPtr,
 };

@@ -160,65 +160,22 @@ free_mem_aligned:
   return NULL;
 }
 
-#if defined(__linux__) && defined(ENABLE_FABRIC_DMABUF) && defined(_GNU_SOURCE)
+#if defined(__linux__) && defined(ENABLE_FABRIC_DMABUF) && defined(_GNU_SOURCE)\
+  && FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION) >= FI_VERSION(1, 20)
 
-PNFRMemory nfrRdmaAttachDMABUF(struct NFRResource * res, void * buf,
-                                uint64_t size, int fd)
+PNFRMemory nfrRdmaAllocDMABUF(struct NFRResource * res, uint64_t size,
+                               uint64_t acs)
 {
-#ifdef NETFR_ENABLE_DMABUF_REGISTRATION
   uint32_t ver = fi_version();
-  if (ver >= FI_VERSION(1, 20))
-  {
-    struct fi_mr_dmabuf dmaAttr = {0};
-    dmaAttr.fd                  = fd;
-    dmaAttr.offset              = 0;
-    dmaAttr.len                 = size;
-    dmaAttr.base_addr           = buf;
-
-    struct fi_mr_attr attr;
-    memset(&attr, 0, sizeof(attr));
-    attr.dmabuf        = &dmaAttr;
-    attr.iov_count     = 1;
-    attr.access        = FI_READ | FI_WRITE | FI_REMOTE_WRITE;
-    attr.offset        = 0;
-    attr.requested_key = 0;
-    attr.context       = res;
-    attr.auth_key      = 0;
-    attr.auth_key_size = 0;
-    attr.iface         = FI_HMEM_SYSTEM;
-    attr.hmem_data     = 0;
-
-    struct NFRMemory * mem = nfrFindEmptyMemSlot(res);
-    if (!mem)
-      return NULL;
-
-    int ret = fi_mr_regattr(res->domain, &attr, FI_MR_DMABUF, &mem->mr);
-    if (ret < 0)
-    {
-      NFR_LOG_DEBUG("Failed to register DMABUF: %s (%d)", fi_strerror(-ret),
-                    ret);
-      return NULL;
-    }
-    mem->addr = buf;
-    mem->size = size;
-    mem->state = MEM_STATE_AVAILABLE;
-    return mem;
-  } else
+  if (ver < FI_VERSION(1, 20))
   {
     NFR_LOG_ERROR("Libfabric %d.%d does not support DMABUF registrations, "
                   "version 1.20 or later is required",
                   FI_MAJOR(ver), FI_MINOR(ver));
     return NULL;
   }
-#else
-  (void)res; (void)buf; (void)size; (void)fd;
-  return NULL;
-#endif
-}
 
-PNFRMemory nfrRdmaAllocDMABUF(struct NFRResource * res, uint64_t size,
-                               uint64_t acs)
-{
+  static int memFdCounter = 0;
   PNFRMemory mem = nfrFindEmptyMemSlot(res);
   if (!mem)
   {
@@ -230,7 +187,17 @@ PNFRMemory nfrRdmaAllocDMABUF(struct NFRResource * res, uint64_t size,
   assert(!mem->addr);
   mem->state = MEM_STATE_INVALID;
 
-  int fd = memfd_create("netfr-dmabuf", MFD_CLOEXEC);
+  // udmabuf requires page-aligned size
+  uint64_t ps = nfrGetPageSize();
+  size = (size + ps - 1) & ~(ps - 1);
+
+  void * addr = MAP_FAILED;
+  int dmaFd   = -1;
+
+  char memName[64];
+  snprintf(memName, sizeof(memName), "netfr-dmabuf-%d-%d", getpid(),
+           memFdCounter++);
+  int fd = memfd_create(memName, MFD_CLOEXEC | MFD_ALLOW_SEALING);
   if (fd < 0)
   {
     NFR_LOG_DEBUG("Failed to create memfd: %s (%d)", strerror(errno), errno);
@@ -263,7 +230,7 @@ PNFRMemory nfrRdmaAllocDMABUF(struct NFRResource * res, uint64_t size,
   dmaBufAttr.offset                = 0;
   dmaBufAttr.size                  = size;
 
-  int dmaFd = ioctl(udmaFd, UDMABUF_CREATE, &dmaBufAttr);
+  dmaFd = ioctl(udmaFd, UDMABUF_CREATE, &dmaBufAttr);
   close(udmaFd);
   if (dmaFd < 0)
   {
@@ -271,25 +238,60 @@ PNFRMemory nfrRdmaAllocDMABUF(struct NFRResource * res, uint64_t size,
     goto close_memfd;
   }
 
-  void * addr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  addr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (addr == MAP_FAILED)
   {
     NFR_LOG_DEBUG("Failed to map memfd: %s (%d)", strerror(errno), errno);
     goto close_dmafd;
   }
 
-  int ret = mlock(addr, size);
-  if (ret < 0)
+  // memfd is no longer needed: udmabuf holds its own reference and the
+  // mapping keeps the underlying pages alive.
+  close(fd);
+  fd = -1;
+
+  if (mlock(addr, size) < 0)
   {
     NFR_LOG_DEBUG("Failed to lock memory: %s (%d)", strerror(errno), errno);
     goto unmap_memfd;
   }
 
-  ret = nfrMrRegWithRetry(res, addr, size, acs, &mem->mr, res, 32);
-  if (ret < 0)
+  struct fi_mr_dmabuf dmaAttr = {0};
+  dmaAttr.fd                  = dmaFd;
+  dmaAttr.offset              = 0;
+  dmaAttr.len                 = size;
+  dmaAttr.base_addr           = addr;
+
+  struct fi_mr_attr attr;
+  memset(&attr, 0, sizeof(attr));
+  attr.dmabuf        = &dmaAttr;
+  attr.iov_count     = 1;
+  attr.access        = acs;
+  attr.offset        = 0;
+  attr.context       = res;
+  attr.auth_key      = 0;
+  attr.auth_key_size = 0;
+  attr.iface         = FI_HMEM_SYSTEM;
+  attr.hmem_data     = 0;
+  if (res->mrMode & FI_MR_PROV_KEY)
+    attr.requested_key = 0;
+  else
+    attr.requested_key = ++res->rkeyCounter;
+
+  ssize_t mrRet = -FI_ENOKEY;
+  for (int i = 0; i < 32; ++i)
   {
-    NFR_LOG_DEBUG("Failed to register memory: %s (%d)", fi_strerror(-ret), ret);
-    errno = -ret;
+    mrRet = fi_mr_regattr(res->domain, &attr, FI_MR_DMABUF, &mem->mr);
+    if (mrRet == 0 || mrRet != -FI_ENOKEY)
+      break;
+    if (res->mrMode & FI_MR_PROV_KEY)
+      break;
+    attr.requested_key = ++res->rkeyCounter;
+  }
+  if (mrRet < 0)
+  {
+    NFR_LOG_DEBUG("Failed to register DMABUF: %s (%zd)", fi_strerror(-mrRet),
+                  mrRet);
     goto munlock_memfd;
   }
 
@@ -307,8 +309,10 @@ unmap_memfd:
 close_dmafd:
   close(dmaFd);
 close_memfd:
-  close(fd);
+  if (fd >= 0)
+    close(fd);
 free_slot:
+  mem->dmaFd = -1;
   mem->state = MEM_STATE_EMPTY;
   return NULL;
 }
@@ -359,7 +363,22 @@ void nfrFreeMemory(PNFRMemory * mem)
 
   if ((*mem)->mr)
     fi_close(&(*mem)->mr->fid);
-  
+
+#if defined(__linux__) && defined(ENABLE_FABRIC_DMABUF) && defined(_GNU_SOURCE)
+  // DMABUF-backed memory has its own teardown path
+  if ((*mem)->memType == NFR_MEM_TYPE_SYSTEM_MANAGED_DMABUF)
+  {
+    if ((*mem)->addr)
+    {
+      NFR_LOG_DEBUG("Unmapping DMABUF region %p", (*mem)->addr);
+      munlock((*mem)->addr, (*mem)->size);
+      munmap((*mem)->addr, (*mem)->size);
+    }
+    if ((*mem)->dmaFd > 0)
+      close((*mem)->dmaFd);
+  }
+  else
+#endif
   // The user is responsible for freeing external memory regions
   if (nfrMemIsInternal((*mem)->memType) && (*mem)->addr)
   {

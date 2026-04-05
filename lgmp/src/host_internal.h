@@ -33,6 +33,7 @@ struct LGMPMemory
   uint32_t       size;
   void          *mem;
   void          *internal;
+  int            dmaFd;
 };
 
 #endif
