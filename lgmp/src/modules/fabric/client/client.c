@@ -7,6 +7,7 @@
 #include "client_internal.h"
 #include "modules/fabric/nfr/nfr_util.h"
 #include "modules/module.h"
+#include "modules/fabric/fabric.h"
 
 #include "fabric.h"
 #include "nfr_uri.h"
@@ -163,23 +164,22 @@ static int lgmpFabric_ClientResyncBufs(struct LGMPFabricClient * client,
 
 // LGMP vtable implementations -------------------------------------------------
 
-LGMP_STATUS lgmpFabricClientInit(const char * localUri,
-    const char * peerUri, PLGMPClient * result)
+LGMP_STATUS lgmpFabricClientInit(LGMPFabricClientInitOpts * opts, PLGMPClient * result)
 {
-  if (!localUri || !peerUri || !result)
+  if (!opts || !opts->localUri || !opts->remoteUri || !result)
     return LGMP_ERR_INVALID_ARGUMENT;
 
   /* Parse the local URI */
   struct sockaddr_in localAddr;
   uint8_t            localTransport;
-  int ret = nfrParseUri(localUri, &localAddr, &localTransport);
+  int ret = nfrParseUri(opts->localUri, &localAddr, &localTransport);
   if (ret < 0)
     return LGMP_ERR_INVALID_ARGUMENT;
 
   /* Parse the peer URI */
   struct sockaddr_in peerAddr;
   uint8_t            peerTransport;
-  ret = nfrParseUri(peerUri, &peerAddr, &peerTransport);
+  ret = nfrParseUri(opts->remoteUri, &peerAddr, &peerTransport);
   if (ret < 0)
     return LGMP_ERR_INVALID_ARGUMENT;
 
@@ -230,6 +230,7 @@ LGMP_STATUS lgmpFabricClientInit(const char * localUri,
   fc->numChannels    = numChannels;
   fc->maxRegionAlloc = NETFR_MAX_BUFFER_SIZE;
   fc->maxTotalAlloc  = NETFR_MAX_MEM_USAGE;
+  fc->useDMABUF      = opts->enableDMABUF;
 
   for (int i = 0; i < numChannels; ++i)
   {
@@ -521,6 +522,7 @@ static LGMP_STATUS lgmpFabricClientProcess(PLGMPClientQueue queue,
       result->udata = mem->udata;
       result->size  = mem->payloadLength;
       result->mem   = (uint8_t *)mem->addr + mem->payloadOffset;
+      result->dmaFD = mem->dmaFd;
       mem->state    = MEM_STATE_AVAILABLE_UNSYNCED;
       return LGMP_OK;
     }
@@ -644,11 +646,26 @@ static LGMP_STATUS lgmpFabricClientMemAttach(PLGMPClientQueue queue,
       ? NFR_MEM_TYPE_USER_MANAGED
       : NFR_MEM_TYPE_USER_MANAGED_DMABUF;
 
-  PNFRMemory nfrMem = nfrRdmaAttach(res, mem, size, 0,
-      FI_READ | FI_WRITE | FI_REMOTE_WRITE, memType,
-      MEM_STATE_AVAILABLE_UNSYNCED);
-  if (!nfrMem)
-    return LGMP_ERR_TRANSPORT_MEM_REG;
+  if (dmaFd)
+  {
+    uint64_t perm = FI_READ | FI_WRITE | FI_REMOTE_WRITE;
+    PNFRMemory out = 0;
+    int ret = nfrRdmaAttachDMABUF(res, mem, size, perm, dmaFd, memType, &out);
+    if (ret < 0)
+    {
+      NFR_LOG_DEBUG("Failed to attach DMABUF memory: %s (%d)", fi_strerror(-ret),
+                    ret);
+      return LGMP_ERR_TRANSPORT_MEM_REG;
+    }
+  }
+  else
+  {
+    PNFRMemory nfrMem = nfrRdmaAttach(res, mem, size, 0,
+        FI_READ | FI_WRITE | FI_REMOTE_WRITE, memType,
+        MEM_STATE_AVAILABLE_UNSYNCED);
+    if (!nfrMem)
+      return LGMP_ERR_TRANSPORT_MEM_REG;
+  }
 
   return LGMP_OK;
 }

@@ -52,6 +52,13 @@ LGMP_STATUS lgmpClientInit(void * mem, const size_t size, PLGMPClient * result);
  */
 LGMP_STATUS lgmpShmClientInit(void * mem, const size_t size, PLGMPClient * result);
 
+typedef struct LGMPFabricClientInitOpts
+{
+    const char * localUri;
+    const char * remoteUri;
+    bool         enableDMABUF;
+} LGMPFabricClientInitOpts;
+
 /**
  * @brief Initialize the LGMP client using the fabric backend.
  *
@@ -75,8 +82,8 @@ LGMP_STATUS lgmpShmClientInit(void * mem, const size_t size, PLGMPClient * resul
  *
  * @return LGMP_STATUS
  */
-LGMP_STATUS lgmpFabricClientInit(const char * localUri, const char * peerUri,
-    PLGMPClient * result);
+LGMP_STATUS lgmpFabricClientInit(LGMPFabricClientInitOpts * opts, 
+                                 PLGMPClient * result);
 
 void        lgmpClientFree(PLGMPClient * client);
 LGMP_STATUS lgmpClientSessionInit(PLGMPClient client, uint32_t * udataSize,
@@ -92,6 +99,7 @@ typedef struct
   uint32_t   udata;
   uint32_t   size;
   void     * mem;
+  int        dmaFD;
 }
 LGMPMessage, * PLGMPMessage;
 

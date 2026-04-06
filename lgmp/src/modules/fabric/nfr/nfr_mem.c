@@ -163,6 +163,81 @@ free_mem_aligned:
 #if defined(__linux__) && defined(ENABLE_FABRIC_DMABUF) && defined(_GNU_SOURCE)\
   && FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION) >= FI_VERSION(1, 20)
 
+int nfrRdmaAttachDMABUF(struct NFRResource * res, void * addr, uint64_t size, 
+                        uint64_t acs, int dmaFd, int memType, PNFRMemory * out)
+{
+  assert(out);
+  if (!out)
+  {
+    assert(!"Null output pointer passed to nfrRdmaAttachDMABUF");
+    return -EINVAL;
+  }
+
+  int allocatedSlot = 0;
+  if (!*out)
+  {
+    *out = nfrFindEmptyMemSlot(res);
+    if (!*out)
+    {
+      assert(!"Memory region limit reached");
+      return -ENOSPC;
+    }
+    allocatedSlot = 1;
+  }
+  
+  struct fi_mr_dmabuf dmaAttr = {0};
+  dmaAttr.fd                  = dmaFd;
+  dmaAttr.offset              = 0;
+  dmaAttr.len                 = size;
+  dmaAttr.base_addr           = addr;
+
+  struct fi_mr_attr attr;
+  memset(&attr, 0, sizeof(attr));
+  attr.dmabuf        = &dmaAttr;
+  attr.iov_count     = 1;
+  attr.access        = acs;
+  attr.offset        = 0;
+  attr.context       = res;
+  attr.auth_key      = 0;
+  attr.auth_key_size = 0;
+  attr.iface         = FI_HMEM_SYSTEM;
+  attr.hmem_data     = 0;
+  if (res->mrMode & FI_MR_PROV_KEY)
+    attr.requested_key = 0;
+  else
+    attr.requested_key = ++res->rkeyCounter;
+
+  ssize_t mrRet = -FI_ENOKEY;
+  for (int i = 0; i < 32; ++i)
+  {
+    mrRet = fi_mr_regattr(res->domain, &attr, FI_MR_DMABUF, &out->mr);
+    if (mrRet == 0 || mrRet != -FI_ENOKEY)
+      break;
+    if (res->mrMode & FI_MR_PROV_KEY)
+      break;
+    attr.requested_key = ++res->rkeyCounter;
+  }
+  if (mrRet < 0)
+  {
+    NFR_LOG_DEBUG("Failed to register DMABUF: %s (%zd)", fi_strerror(-mrRet),
+                  mrRet);
+    if (allocatedSlot)
+    {
+      (*out)->state = MEM_STATE_EMPTY;
+      (*out)->dmaFd = -1;
+    }
+    return mrRet;
+  }
+  (*out)->addr    = addr;
+  (*out)->dmaFd   = dmaFd;
+  (*out)->size    = size;
+  (*out)->memType = memType;
+  (*out)->state   = MEM_STATE_AVAILABLE;
+  NFR_LOG_DEBUG("Registered DMABUF memory %p with key %lu", 
+                (*out)->addr, fi_mr_key((*out)->mr));
+  return 0;
+}
+
 PNFRMemory nfrRdmaAllocDMABUF(struct NFRResource * res, uint64_t size,
                                uint64_t acs)
 {
@@ -256,50 +331,15 @@ PNFRMemory nfrRdmaAllocDMABUF(struct NFRResource * res, uint64_t size,
     goto unmap_memfd;
   }
 
-  struct fi_mr_dmabuf dmaAttr = {0};
-  dmaAttr.fd                  = dmaFd;
-  dmaAttr.offset              = 0;
-  dmaAttr.len                 = size;
-  dmaAttr.base_addr           = addr;
-
-  struct fi_mr_attr attr;
-  memset(&attr, 0, sizeof(attr));
-  attr.dmabuf        = &dmaAttr;
-  attr.iov_count     = 1;
-  attr.access        = acs;
-  attr.offset        = 0;
-  attr.context       = res;
-  attr.auth_key      = 0;
-  attr.auth_key_size = 0;
-  attr.iface         = FI_HMEM_SYSTEM;
-  attr.hmem_data     = 0;
-  if (res->mrMode & FI_MR_PROV_KEY)
-    attr.requested_key = 0;
-  else
-    attr.requested_key = ++res->rkeyCounter;
-
-  ssize_t mrRet = -FI_ENOKEY;
-  for (int i = 0; i < 32; ++i)
+  int ret = nfrRdmaAttachDMABUF(res, addr, size, acs, dmaFd, 
+                                NFR_MEM_TYPE_SYSTEM_MANAGED_DMABUF, mem);
+  if (ret < 0)
   {
-    mrRet = fi_mr_regattr(res->domain, &attr, FI_MR_DMABUF, &mem->mr);
-    if (mrRet == 0 || mrRet != -FI_ENOKEY)
-      break;
-    if (res->mrMode & FI_MR_PROV_KEY)
-      break;
-    attr.requested_key = ++res->rkeyCounter;
-  }
-  if (mrRet < 0)
-  {
-    NFR_LOG_DEBUG("Failed to register DMABUF: %s (%zd)", fi_strerror(-mrRet),
-                  mrRet);
+    NFR_LOG_DEBUG("Failed to register DMABUF memory: %s (%d)", fi_strerror(-ret),
+                  ret);
     goto munlock_memfd;
   }
 
-  mem->addr    = addr;
-  mem->dmaFd   = dmaFd;
-  mem->size    = size;
-  mem->state   = MEM_STATE_AVAILABLE_UNSYNCED;
-  mem->memType = NFR_MEM_TYPE_SYSTEM_MANAGED_DMABUF;
   return mem;
 
 munlock_memfd:

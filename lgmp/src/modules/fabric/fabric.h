@@ -63,6 +63,7 @@ struct LGMPFabricClient {
   uint64_t                       maxRegionAlloc;
   uint64_t                       maxTotalAlloc;
   uint8_t                        udata[NFR_HOST_MAX_UDATA];
+  bool                           useDMABUF;
 };
 
 // Fabric Memory ---------------------------------------------------------------

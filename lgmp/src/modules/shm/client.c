@@ -446,6 +446,7 @@ static LGMP_STATUS lgmpShmClientProcess(PLGMPClientQueue queue,
   result->udata = msg->udata;
   result->size  = msg->size;
   result->mem   = shm->mem + msg->offset;
+  result->dmaFD = -1;
 
   return LGMP_OK;
 }

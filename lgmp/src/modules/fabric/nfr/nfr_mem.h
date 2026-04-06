@@ -51,6 +51,25 @@ PNFRMemory nfrRdmaAttach(struct NFRResource * res, void * addr, uint64_t size,
                           uint8_t externalMem, uint8_t initialState);
 
 /**
+ * @brief Attach a DMABUF memory region for RDMA operations.
+ * 
+ * @warning This function is highly experimental and only available on
+ *          Linux systems with libfabric version 1.20 or later.
+ * 
+ * @param res     Resource to attach the memory region to.
+ * @param mem     Pointer to memory region.
+ * @param size    Size of memory region to attach.
+ * @param acs     Access permissions for memory region.
+ * @param dmaFd   File descriptor of the associated DMABUF.
+ * @param memType Type of the memory region (user-managed or system-managed).
+ * @param out     Pointer to the memory region object to populate with the 
+ *                attached memory region's information.
+ * @return PNFRMemory Pointer to the memory region object, or NULL on failure.
+ */
+int nfrRdmaAttachDMABUF(struct NFRResource * res, void * addr, uint64_t size,
+                        uint64_t acs, int dmaFd, int memType, PNFRMemory out);
+
+/**
  * @brief Attach a DMABUF memory region to a resource.
  * 
  * @warning This function is highly experimental and only available on

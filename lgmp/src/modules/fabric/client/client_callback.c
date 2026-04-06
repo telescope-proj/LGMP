@@ -7,6 +7,8 @@
 #include "nfr_mem.h"
 #include "nfr_protocol.h"
 
+#include "modules/fabric/fabric.h"
+
 void nfrClientProcessInternalTx(struct NFRFabricContext * ctx)
 {
   ASSERT_CONTEXT_VALID(ctx);
@@ -136,12 +138,20 @@ void nfrClientProcessInternalRx(struct NFRFabricContext * ctx)
         if (totalAlloc + sz > client->maxTotalAlloc)
           continue;
 
-        PNFRMemory mem = nfrRdmaAttach(
-          chanRes, 0, sz, 0, FI_READ | FI_WRITE | FI_REMOTE_WRITE, 
-          NFR_MEM_TYPE_SYSTEM_MANAGED, MEM_STATE_AVAILABLE_UNSYNCED
-        );
+        bool useDMABUF = chan->parent->useDMABUF;
+        
+        uint64_t acs = FI_READ | FI_WRITE | FI_REMOTE_WRITE;
+        enum MemoryState memState = MEM_STATE_AVAILABLE_UNSYNCED;
+        PNFRMemory mem = NULL;
+        if (useDMABUF)
+          mem = nfrRdmaAllocDMABUF(chanRes, sz, acs);
+        else
+          mem = nfrRdmaAlloc(chanRes, sz, acs, NFR_MEM_TYPE_SYSTEM_MANAGED);
         if (mem)
           totalAlloc += sz;
+        else
+          NFR_LOG_ERROR("Failed to allocate memory region of size %lu for host "
+                        "buffer (useDMABUF=%d)", sz, useDMABUF);
       }
 
       NFR_RESET_CONTEXT(ctx);
