@@ -648,6 +648,8 @@ static LGMP_STATUS lgmpFabricClientMemAttach(PLGMPClientQueue queue,
 
   if (dmaFd)
   {
+#if defined(__linux__) && defined(ENABLE_FABRIC_DMABUF) && defined(_GNU_SOURCE) \
+  && FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION) >= FI_VERSION(1, 20)
     uint64_t perm = FI_READ | FI_WRITE | FI_REMOTE_WRITE;
     PNFRMemory out = 0;
     int ret = nfrRdmaAttachDMABUF(res, mem, size, perm, dmaFd, memType, &out);
@@ -657,6 +659,10 @@ static LGMP_STATUS lgmpFabricClientMemAttach(PLGMPClientQueue queue,
                     ret);
       return LGMP_ERR_TRANSPORT_MEM_REG;
     }
+#else
+    (void)memType;
+    return LGMP_ERR_NOT_SUPPORTED;
+#endif
   }
   else
   {
