@@ -7,8 +7,12 @@
 #include <stddef.h>
 
 #ifdef _WIN32
+  #include <winsock2.h>
+  #include <windows.h>
   #include <bcrypt.h>
-  #pragma comment(lib, "bcrypt")
+  #ifdef _MSC_VER
+    #pragma comment(lib, "bcrypt")
+  #endif
 #elif defined(__linux__)
   #include <sys/random.h>
 #else
