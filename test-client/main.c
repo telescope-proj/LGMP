@@ -101,7 +101,13 @@ int setupFabric(const char * localUri, const char * remoteUri,
     PLGMPClient * result)
 {
   LGMP_STATUS status;
-  status = lgmpFabricClientInit(localUri, remoteUri, result);
+  LGMPFabricClientInitOpts opts;
+  memset(&opts, 0, sizeof(opts));
+  opts.localUri    = localUri;
+  opts.remoteUri   = remoteUri;
+  opts.enableDMABUF = false;
+
+  status = lgmpFabricClientInit(&opts, result);
   if (status != LGMP_OK)
   {
     printf("Failed to initialize fabric: %s\n", lgmpStatusString(status));

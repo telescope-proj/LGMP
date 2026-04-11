@@ -82,6 +82,7 @@ int setupFabric(const char * uri, uint8_t * udata, int udataSize, PLGMPHost * re
     printf("Failed to initialize fabric: %s\n", lgmpStatusString(status));
     return -1;
   }
+  return 0;
 }
 #endif
 
