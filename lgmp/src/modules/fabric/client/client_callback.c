@@ -141,7 +141,6 @@ void nfrClientProcessInternalRx(struct NFRFabricContext * ctx)
         bool useDMABUF = chan->parent->useDMABUF;
         
         uint64_t acs = FI_READ | FI_WRITE | FI_REMOTE_WRITE;
-        enum MemoryState memState = MEM_STATE_AVAILABLE_UNSYNCED;
         PNFRMemory mem = NULL;
         if (useDMABUF)
           mem = nfrRdmaAllocDMABUF(chanRes, sz, acs);
