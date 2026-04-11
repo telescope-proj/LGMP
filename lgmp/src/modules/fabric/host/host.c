@@ -21,6 +21,10 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
+
 // Internal helpers ------------------------------------------------------------
 
 static int lgmpFabric_HostBind(struct NFRResource * res)
@@ -213,12 +217,24 @@ LGMP_STATUS lgmpFabricHostInit(const char * uri,
   if (!uri || !result || (!udataSize && udata) || (udataSize && !udata))
     return LGMP_ERR_INVALID_ARGUMENT;
 
+#ifdef _WIN32
+  /* getaddrinfo requires winsock initialization */
+  WSADATA wsaData;
+  if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+    return LGMP_ERR_TRANSPORT_INIT_FAILURE;
+#endif
+
   /* Parse the URI into address + transport type */
   struct sockaddr_in baseAddr;
   uint8_t            transport;
   int ret = nfrParseUri(uri, &baseAddr, &transport);
   if (ret < 0)
+  {
+#ifdef _WIN32
+    WSACleanup();
+#endif
     return LGMP_ERR_INVALID_ARGUMENT;
+  }
 
   int numChannels = LGMP_MAX_QUEUES + 1; /* +1 for metadata channel */
 
