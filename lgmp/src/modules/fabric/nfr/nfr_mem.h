@@ -67,7 +67,8 @@ PNFRMemory nfrRdmaAttach(struct NFRResource * res, void * addr, uint64_t size,
  * @return PNFRMemory Pointer to the memory region object, or NULL on failure.
  */
 int nfrRdmaAttachDMABUF(struct NFRResource * res, void * addr, uint64_t size,
-                        uint64_t acs, int dmaFd, int memType, PNFRMemory out);
+                        uint64_t acs, int dmaFd, int memType,
+                        PNFRMemory * out);
 
 /**
  * @brief Attach a DMABUF memory region to a resource.

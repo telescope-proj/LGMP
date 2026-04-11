@@ -210,7 +210,7 @@ int nfrRdmaAttachDMABUF(struct NFRResource * res, void * addr, uint64_t size,
   ssize_t mrRet = -FI_ENOKEY;
   for (int i = 0; i < 32; ++i)
   {
-    mrRet = fi_mr_regattr(res->domain, &attr, FI_MR_DMABUF, &out->mr);
+    mrRet = fi_mr_regattr(res->domain, &attr, FI_MR_DMABUF, &(*out)->mr);
     if (mrRet == 0 || mrRet != -FI_ENOKEY)
       break;
     if (res->mrMode & FI_MR_PROV_KEY)
