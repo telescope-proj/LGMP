@@ -443,10 +443,11 @@ static LGMP_STATUS lgmpShmClientProcess(PLGMPClientQueue queue,
   uint32_t npos = (queue->position + 1) & mask2;
   LGMP_PREFETCH_R(&messages[npos], 2);
 
-  result->udata = msg->udata;
-  result->size  = msg->size;
-  result->mem   = shm->mem + msg->offset;
-  result->dmaFD = -1;
+  result->udata   = msg->udata;
+  result->size    = msg->size;
+  result->mem     = shm->mem + msg->offset;
+  result->memSize = msg->memSize;
+  result->dmaFD   = -1;
 
   return LGMP_OK;
 }

@@ -172,6 +172,8 @@ struct LGMPHeaderMessage
   uint32_t size;
   uint32_t offset;
   _Atomic(uint32_t) pendingSubs;
+  uint32_t memSize;
+  uint32_t _padMsg[3];
 }
 ALIGNED_16;
 

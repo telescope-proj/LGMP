@@ -450,6 +450,7 @@ static LGMP_STATUS lgmpShmHostQueuePostSized(PLGMPHostQueue queue, uint32_t udat
   msg->udata       = udata;
   msg->size        = size;
   msg->offset      = payload->offset;
+  msg->memSize     = payload->size;
   atomic_store_explicit(&msg->pendingSubs, pend, memory_order_release);
 
   // increment the queue count, if it were zero update the msgTimeout

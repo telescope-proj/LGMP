@@ -99,6 +99,7 @@ typedef struct
   uint32_t   udata;
   uint32_t   size;
   void     * mem;
+  uint32_t   memSize;
   int        dmaFD;
 }
 LGMPMessage, * PLGMPMessage;

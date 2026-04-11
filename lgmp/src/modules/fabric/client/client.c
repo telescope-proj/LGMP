@@ -507,9 +507,10 @@ static LGMP_STATUS lgmpFabricClientProcess(PLGMPClientQueue queue,
   if (ret > 0 && ctx)
   {
     struct NFRMsgHostData * msg = (struct NFRMsgHostData *) ctx->slot->data;
-    result->udata = 0;
-    result->size  = msg->length;
-    result->mem   = msg->data;
+    result->udata   = 0;
+    result->size    = msg->length;
+    result->mem     = msg->data;
+    result->memSize = msg->length;
     return LGMP_OK;
   }
 
@@ -519,11 +520,12 @@ static LGMP_STATUS lgmpFabricClientProcess(PLGMPClientQueue queue,
     struct NFRMemory * mem = &qres->memRegions[j];
     if (mem->state == MEM_STATE_HAS_DATA)
     {
-      result->udata = mem->udata;
-      result->size  = mem->payloadLength;
-      result->mem   = (uint8_t *)mem->addr + mem->payloadOffset;
-      result->dmaFD = mem->dmaFd;
-      mem->state    = MEM_STATE_AVAILABLE_UNSYNCED;
+      result->udata   = mem->udata;
+      result->size    = mem->payloadLength;
+      result->mem     = (uint8_t *)mem->addr + mem->payloadOffset;
+      result->memSize = (uint32_t)mem->size;
+      result->dmaFD   = mem->dmaFd;
+      mem->state      = MEM_STATE_AVAILABLE_UNSYNCED;
       return LGMP_OK;
     }
   }
