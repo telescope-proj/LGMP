@@ -1,4 +1,5 @@
 option(ENABLE_FABRIC "Enable fabric (network) transport module" OFF)
+set(_LGMP_FABRIC_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 include(CMakeDependentOption)
 cmake_dependent_option(
@@ -33,9 +34,9 @@ function(lgmp_link_fabric target)
   endif()
 
   if(LIBFABRIC_ROOT OR WIN32)
-    include(libfabric_prebuilt)
+    include("${_LGMP_FABRIC_CMAKE_DIR}/libfabric_prebuilt.cmake")
   elseif(USE_UPSTREAM_LIBFABRIC)
-    include(libfabric_upstream)
+    include("${_LGMP_FABRIC_CMAKE_DIR}/libfabric_upstream.cmake")
   else()
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(LIBFABRIC REQUIRED libfabric IMPORTED_TARGET)

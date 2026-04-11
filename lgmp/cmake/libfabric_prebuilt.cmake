@@ -92,11 +92,18 @@ else()
     "${LIBFABRIC_ROOT}/../../include" ABSOLUTE)
 endif()
 
+set(_lgmp_fabric_include_dirs "${_lgmp_fabric_include_dir}")
+if(WIN32 AND IS_DIRECTORY "${_lgmp_fabric_include_dir}/windows")
+  list(APPEND _lgmp_fabric_include_dirs
+    "${_lgmp_fabric_include_dir}/windows")
+endif()
+
 add_library(libfabric SHARED IMPORTED GLOBAL)
 set_target_properties(libfabric PROPERTIES
   IMPORTED_IMPLIB               "${LIBFABRIC_IMPLIB}"
-  INTERFACE_INCLUDE_DIRECTORIES "${_lgmp_fabric_include_dir}"
+  INTERFACE_INCLUDE_DIRECTORIES "${_lgmp_fabric_include_dirs}"
 )
+unset(_lgmp_fabric_include_dirs)
 unset(_lgmp_fabric_include_dir)
 
 if(WIN32)
