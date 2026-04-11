@@ -28,7 +28,7 @@
 #include "lgmp.h"
 
 #define LGMP_PROTOCOL_MAGIC   0x504d474c
-#define LGMP_PROTOCOL_VERSION 10
+#define LGMP_PROTOCOL_VERSION 11
 
 // maximum number of client messages supported
 #define LGMP_MSGS_MAX  16
