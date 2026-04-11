@@ -49,5 +49,8 @@ function(lgmp_link_fabric target)
     src/modules/fabric/nfr
   )
   target_link_libraries(${target} libfabric)
+  if(WIN32)
+    target_link_libraries(${target} ws2_32 bcrypt)
+  endif()
   target_compile_definitions(${target} PUBLIC ENABLE_FABRIC)
 endfunction()
