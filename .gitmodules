@@ -1,3 +1,6 @@
 [submodule "relacy"]
 	path = relacy
 	url = https://github.com/dvyukov/relacy.git
+[submodule "repos/libfabric"]
+	path = repos/libfabric
+	url = https://github.com/ofiwg/libfabric
