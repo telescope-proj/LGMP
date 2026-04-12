@@ -458,7 +458,7 @@ static LGMP_STATUS lgmpFabricClientAdvanceToLast(PLGMPClientQueue queue)
 }
 
 static inline void lgmpFabric_PollChannel(
-    struct LGMPFabricClient * fc, int i, bool atomic)
+    struct LGMPFabricClient * fc, int i)
 {
   struct LGMPFabricClientChannel * ch  = &fc->channels[i];
   struct NFRResource *             res = ch->res;
@@ -508,8 +508,8 @@ static LGMP_STATUS lgmpFabricClientProcess(PLGMPClientQueue queue,
   if (chIdx >= fc->numChannels)
     return LGMP_ERR_QUEUE_EMPTY;
 
-  lgmpFabric_PollChannelAtomic(fc, NFR_METADATA_CHANNEL_INDEX);
-  lgmpFabric_PollChannelAtomic(fc, chIdx);
+  lgmpFabric_PollChannel(fc, NFR_METADATA_CHANNEL_INDEX);
+  lgmpFabric_PollChannel(fc, chIdx);
 
   struct LGMPFabricClientChannel * qch  = &fc->channels[chIdx];
   struct NFRResource *             qres = qch->res;
