@@ -81,9 +81,9 @@ int setupIVSHMEM(const char * shmFile, PLGMPClient * result)
   }
 
   LGMP_STATUS status;
-  if ((status = lgmpClientInit(ram, devSize, result)) != LGMP_OK)
+  if ((status = lgmpShmClientInit(ram, devSize, result)) != LGMP_OK)
   {
-    printf("lgmpClientInit %s\n", lgmpStatusString(status));
+    printf("lgmpShmClientInit %s\n", lgmpStatusString(status));
     goto out_unmap;
   }
 

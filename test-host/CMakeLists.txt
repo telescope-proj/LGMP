@@ -11,3 +11,11 @@ add_executable(test-host ${SOURCES})
 target_link_libraries(test-host
 	lgmp
 )
+
+if(ENABLE_SHM)
+  target_link_libraries(test-host lgmp_shm)
+endif()
+
+if(ENABLE_FABRIC)
+  target_link_libraries(test-host lgmp_fabric)
+endif()

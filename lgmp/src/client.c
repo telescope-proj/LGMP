@@ -21,18 +21,8 @@
 #include "lgmp/client.h"
 
 #include "client_internal.h"
-#include "modules/module.h"
 
 #include <assert.h>
-
-/*
-  This function is maintained in order to preserve the API for Looking Glass.
-  It uses the default shared memory implementation.
-*/
-LGMP_STATUS lgmpClientInit(void * mem, const size_t size, PLGMPClient * result)
-{
-  return lgmpShmClientInit(mem, size, result);
-}
 
 void lgmpClientFree(PLGMPClient * client)
 {

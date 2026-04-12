@@ -10,12 +10,6 @@
 #include "lgmp/client.h"
 #include "lgmp/host.h"
 
-#include "modules/shm/module.h"
-
-#ifdef ENABLE_FABRIC
-#include "modules/fabric/module.h"
-#endif
-
 
 typedef enum
 {
@@ -81,12 +75,5 @@ struct LGMPHostQueueOps {
     void        (*memFree)(PLGMPMemory * mem);
     void *      (*memPtr)(PLGMPMemory mem);
 };
-
-
-
-LGMP_STATUS lgmpShmClientInit(void * mem, const size_t size,
-  PLGMPClient * result);
-LGMP_STATUS lgmpShmHostInit(void *mem, const uint32_t size, PLGMPHost * result,
-  uint32_t udataSize, uint8_t * udata);
 
 #endif

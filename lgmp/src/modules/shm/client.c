@@ -24,7 +24,8 @@
 #include "headers.h"
 #include "client_internal.h"
 #include "modules/module.h"
-#include "modules/shm/shm.h"
+#include "shm/module.h"
+#include "shm/shm.h"
 
 #include <assert.h>
 #include <string.h>

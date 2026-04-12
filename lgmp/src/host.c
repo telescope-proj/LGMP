@@ -21,15 +21,8 @@
 #include "lgmp/host.h"
 
 #include "host_internal.h"
-#include "modules/module.h"
 
 #include <assert.h>
-
-LGMP_STATUS lgmpHostInit(void *mem, const uint32_t size, PLGMPHost * result,
-    uint32_t udataSize, uint8_t * udata)
-{
-  return lgmpShmHostInit(mem, size, result, udataSize, udata);
-}
 
 void lgmpHostFree(PLGMPHost * host)
 {

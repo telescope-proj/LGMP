@@ -6,6 +6,7 @@
 
 #include "host_internal.h"
 #include "modules/module.h"
+#include "fabric/module.h"
 
 #include "fabric.h"
 #include "nfr_uri.h"

@@ -11,3 +11,11 @@ add_executable(test-client ${SOURCES})
 target_link_libraries(test-client
 	lgmp
 )
+
+if(ENABLE_SHM)
+  target_link_libraries(test-client lgmp_shm)
+endif()
+
+if(ENABLE_FABRIC)
+  target_link_libraries(test-client lgmp_fabric)
+endif()

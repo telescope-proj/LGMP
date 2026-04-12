@@ -34,15 +34,6 @@ extern "C" {
 
 
 /**
- * @brief Initialize the shared memory backend. See #lgmpShmClientInit
- *
- * @warning This function implicitly calls the lgmpShmClientInit function,
- *          but lgmpShmClientInit/lgmpFabricClientInit should be used in
- *          future versions to make the requirements explicit.
- */
-LGMP_STATUS lgmpClientInit(void * mem, const size_t size, PLGMPClient * result);
-
-/**
  * @brief Initialize the LGMP client using the shared memory backend.
  *
  * @param mem Pointer to the shared memory region to use for the client.

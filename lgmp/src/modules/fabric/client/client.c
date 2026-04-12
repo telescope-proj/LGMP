@@ -7,7 +7,7 @@
 #include "client_internal.h"
 #include "modules/fabric/nfr/nfr_util.h"
 #include "modules/module.h"
-#include "modules/fabric/fabric.h"
+#include "fabric/module.h"
 
 #include "fabric.h"
 #include "nfr_uri.h"

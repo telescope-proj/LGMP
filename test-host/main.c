@@ -56,10 +56,10 @@ int setupIVSHMEM(const char * shmFile, uint8_t * udata, int udataSize, PLGMPHost
     goto out_close;
   }
 
-  status = lgmpHostInit(ram, RAM_SIZE, result, udataSize, udata);
+  status = lgmpShmHostInit(ram, RAM_SIZE, result, udataSize, udata);
   if (status != LGMP_OK)
   {
-    printf("lgmpHostInit failed: %s\n", lgmpStatusString(status));
+    printf("lgmpShmHostInit failed: %s\n", lgmpStatusString(status));
     goto out_unmap;
   }
 

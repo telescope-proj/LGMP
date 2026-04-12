@@ -1,18 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(lgmp LANGUAGES C)
 
-include_directories(include)
-
-set(SOURCES
-	src/host.c
-	src/client.c
-	src/status.c
-	src/log.c
-	src/modules/shm/host.c
-	src/modules/shm/client.c
-)
-
-include(cmake/fabric.cmake)
+option(ENABLE_FABRIC "Enable fabric (network) transport module" OFF)
+if(ENABLE_FABRIC)
+  include(cmake/fabric.cmake)
+endif()
 
 add_compile_options(
   "-Wall"
@@ -25,13 +17,47 @@ add_compile_options(
   "$<$<CONFIG:DEBUG>:-O0;-g3;-ggdb>"
 )
 
-add_library(lgmp STATIC ${SOURCES} ${FABRIC_SOURCES})
+# --- Core library (dispatch layer, logging, status) ---
+add_library(lgmp STATIC
+  src/host.c
+  src/client.c
+  src/status.c
+  src/log.c
+)
 target_include_directories(lgmp
-	INTERFACE
-		include
-	PRIVATE
-		src
-		src/modules
+  PUBLIC
+    include
+  PRIVATE
+    src
+    src/modules
 )
 
-lgmp_link_fabric(lgmp)
+# --- SHM module (optional, on by default) ---
+option(ENABLE_SHM "Enable shared memory transport module" ON)
+if(ENABLE_SHM)
+  add_library(lgmp_shm STATIC
+    src/modules/shm/host.c
+    src/modules/shm/client.c
+  )
+  target_include_directories(lgmp_shm
+    PRIVATE
+      src
+      src/modules
+  )
+  target_link_libraries(lgmp_shm PUBLIC lgmp)
+  target_compile_definitions(lgmp_shm PUBLIC ENABLE_SHM)
+endif()
+
+# Fabric Module (optional, off by default)
+if(ENABLE_FABRIC)
+  add_library(lgmp_fabric STATIC ${FABRIC_SOURCES})
+  target_include_directories(lgmp_fabric
+    PRIVATE
+      src
+      src/modules
+      src/modules/fabric
+      src/modules/fabric/nfr
+  )
+  target_link_libraries(lgmp_fabric PUBLIC lgmp)
+  lgmp_link_fabric(lgmp_fabric)
+endif()

@@ -33,13 +33,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Initializes the shared memory transport backend. See #lgmpShmHostInit.
- */
-LGMP_STATUS lgmpHostInit(void *mem, const uint32_t size, PLGMPHost * result,
-    uint32_t udataSize, uint8_t * udata);
-
-
-/**
  * @brief Initialize the shared memory transport backend.
  * 
  * @param mem 
@@ -51,8 +44,6 @@ LGMP_STATUS lgmpHostInit(void *mem, const uint32_t size, PLGMPHost * result,
  */
 LGMP_STATUS lgmpShmHostInit(void *mem, const uint32_t size, PLGMPHost * result,
     uint32_t udataSize, uint8_t * udata);
-
-#ifdef ENABLE_FABRIC
 
 /**
  * @brief Initialize the fabric transport backend.
@@ -79,7 +70,6 @@ LGMP_STATUS lgmpShmHostInit(void *mem, const uint32_t size, PLGMPHost * result,
  */
 LGMP_STATUS lgmpFabricHostInit(const char * uri,
     PLGMPHost * result, uint32_t udataSize, uint8_t * udata);
-#endif
 
 void        lgmpHostFree   (PLGMPHost * host);
 LGMP_STATUS lgmpHostProcess(PLGMPHost host);
