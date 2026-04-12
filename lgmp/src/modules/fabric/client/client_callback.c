@@ -145,7 +145,8 @@ void nfrClientProcessInternalRx(struct NFRFabricContext * ctx)
         if (useDMABUF)
           mem = nfrRdmaAllocDMABUF(chanRes, sz, acs);
         else
-          mem = nfrRdmaAlloc(chanRes, sz, acs, NFR_MEM_TYPE_SYSTEM_MANAGED);
+          mem = nfrRdmaAttach(chanRes, 0, sz, 0, acs, NFR_MEM_TYPE_SYSTEM_MANAGED,
+                              MEM_STATE_AVAILABLE_UNSYNCED);
         if (mem)
           totalAlloc += sz;
         else
