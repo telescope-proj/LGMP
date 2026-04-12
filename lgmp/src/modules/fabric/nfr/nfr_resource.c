@@ -753,11 +753,12 @@ ssize_t nfrPostTransfer(struct NFRResource * res, struct NFR_TransferInfo * ti)
       assert(ti->length <= NETFR_MESSAGE_MAX_SIZE);
       assert(ti->context->slot);
 
-      ret = fi_send(ep, ti->context->slot->data, ti->length,
-                    fi_mr_desc(res->commBuf.memRegion->mr), 0, ti->context);
+      ctx = ti->context;
+      ret = fi_send(ep, ctx->slot->data, ti->length,
+                    fi_mr_desc(res->commBuf.memRegion->mr), 0, ctx);
       if (ret < 0)
       {
-        NFR_RESET_CONTEXT(ti->context);
+        NFR_RESET_CONTEXT(ctx);
         return ret;
       }
       break;

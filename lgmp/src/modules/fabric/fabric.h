@@ -46,6 +46,7 @@ struct LGMPFabricClientChannel {
   _Atomic(uint32_t)           lock;
   struct LGMPFabricClient *   parent;
   struct NFRResource *        res;
+  struct NFRFabricContext *   activeRxCtx;
   uint32_t                    msgSerial;
   uint32_t                    writeSerial;
   uint32_t                    channelSerial;

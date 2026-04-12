@@ -457,6 +457,44 @@ static LGMP_STATUS lgmpFabricClientAdvanceToLast(PLGMPClientQueue queue)
   return LGMP_OK;
 }
 
+static inline void lgmpFabric_PollChannel(
+    struct LGMPFabricClient * fc, int i, bool atomic)
+{
+  struct LGMPFabricClientChannel * ch  = &fc->channels[i];
+  struct NFRResource *             res = ch->res;
+
+  uint32_t expected = 0;
+  if (!atomic_compare_exchange_weak_explicit(&ch->lock, &expected, 1, 
+      memory_order_acquire, memory_order_relaxed))
+  {
+    return;
+  }
+
+  if (res->connState != NFR_CONN_STATE_CONNECTED)
+  {
+    atomic_store_explicit(&ch->lock, 0, memory_order_release);
+    return;
+  }
+
+  /* Check connection state */
+  int ret = lgmpFabric_CheckConnState(res);
+  if (ret < 0)
+  {
+    atomic_store_explicit(&ch->lock, 0, memory_order_release);
+    return;
+  }
+
+  /* Resync buffers */
+  lgmpFabric_ClientResyncBufs(fc, i);
+
+  /* Process CQ and post receives */
+  struct NFR_CallbackInfo cbInfo = {0};
+  cbInfo.callback                         = nfrClientProcessInternalRx;
+  cbInfo.uData[NFR_CLIENT_RX_CB_CHANNEL]  = ch;
+  nfrChannelPoll(res, &cbInfo);
+  atomic_store_explicit(&ch->lock, 0, memory_order_release);
+}
+
 static LGMP_STATUS lgmpFabricClientProcess(PLGMPClientQueue queue,
     PLGMPMessage result)
 {
@@ -466,36 +504,14 @@ static LGMP_STATUS lgmpFabricClientProcess(PLGMPClientQueue queue,
   PLGMPClient client = queue->client;
   struct LGMPFabricClient * fc = client->internal;
 
-  /* Process all channels (metadata + queue channels) for connection events */
-  for (int i = 0; i < fc->numChannels; ++i)
-  {
-    struct LGMPFabricClientChannel * ch  = &fc->channels[i];
-    struct NFRResource *             res = ch->res;
-
-    if (res->connState != NFR_CONN_STATE_CONNECTED)
-      continue;
-
-    /* Check connection state */
-    int ret = lgmpFabric_CheckConnState(res);
-    if (ret < 0)
-      continue;
-
-    /* Resync buffers */
-    lgmpFabric_ClientResyncBufs(fc, i);
-
-    /* Process CQ and post receives */
-    struct NFR_CallbackInfo cbInfo = {0};
-    cbInfo.callback                         = nfrClientProcessInternalRx;
-    cbInfo.uData[NFR_CLIENT_RX_CB_CHANNEL]  = ch;
-    nfrChannelPoll(res, &cbInfo);
-  }
-
-  /* Check the queue's specific channel for data */
   int chIdx = queue->index + NFR_QUEUE_CHANNEL_BASE;
   if (chIdx >= fc->numChannels)
     return LGMP_ERR_QUEUE_EMPTY;
 
-  struct LGMPFabricClientChannel * qch = &fc->channels[chIdx];
+  lgmpFabric_PollChannelAtomic(fc, NFR_METADATA_CHANNEL_INDEX);
+  lgmpFabric_PollChannelAtomic(fc, chIdx);
+
+  struct LGMPFabricClientChannel * qch  = &fc->channels[chIdx];
   struct NFRResource *             qres = qch->res;
 
   if (!qres || qres->connState != NFR_CONN_STATE_CONNECTED)
@@ -511,6 +527,7 @@ static LGMP_STATUS lgmpFabricClientProcess(PLGMPClientQueue queue,
     result->size    = msg->length;
     result->mem     = msg->data;
     result->memSize = msg->length;
+    qch->activeRxCtx = ctx;
     return LGMP_OK;
   }
 
@@ -535,8 +552,22 @@ static LGMP_STATUS lgmpFabricClientProcess(PLGMPClientQueue queue,
 
 static LGMP_STATUS lgmpFabricClientMessageDone(PLGMPClientQueue queue)
 {
-  /* In fabric mode, the CQ processing handles context cleanup */
-  (void)queue;
+  assert(queue);
+
+  PLGMPClient client = queue->client;
+  struct LGMPFabricClient * fc = client->internal;
+
+  int chIdx = queue->index + NFR_QUEUE_CHANNEL_BASE;
+  if (chIdx >= fc->numChannels)
+    return LGMP_OK;
+
+  struct LGMPFabricClientChannel * ch = &fc->channels[chIdx];
+  if (ch->activeRxCtx)
+  {
+    NFR_RESET_CONTEXT(ch->activeRxCtx);
+    ch->activeRxCtx = NULL;
+  }
+
   return LGMP_OK;
 }
 
