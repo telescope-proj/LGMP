@@ -349,6 +349,7 @@ int nfrResourceOpenSingle(const struct NFRInitOpts * opts, int index,
        at regular intervals anyway. Try registering with and without FI_HMEM
        for DMABUF support as well.
     */
+    NFR_LOG_DEBUG("Trying fabric init mode %d", i);
     switch (i)
     {
       case 0:
@@ -372,15 +373,12 @@ int nfrResourceOpenSingle(const struct NFRInitOpts * opts, int index,
         break;
     }
     ret = fi_getinfo(opts->apiVersion, node, service, flags, hints, &info);
-    if (ret < 0)
-    {
-      if (flags & FI_HMEM)
-      {
-        NFR_LOG_DEBUG("DMABUF-enabled fabric not found, retrying without");
-        flags &= ~FI_HMEM;
-        continue;
-      }
+    if (ret == 0)
+      break;
+  }
 
+  if (ret < 0)
+    {
       NFR_LOG_DEBUG("Unable to find suitable fabric: %s (%d)",
                     fi_strerror(-ret), ret);
       hints->src_addr     = 0;
@@ -390,8 +388,6 @@ int nfrResourceOpenSingle(const struct NFRInitOpts * opts, int index,
       fi_freeinfo(hints);
       goto free_struct;
     }
-    break;
-  }
 
   assert(info);
 
