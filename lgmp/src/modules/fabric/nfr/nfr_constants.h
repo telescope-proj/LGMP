@@ -32,7 +32,7 @@ extern "C" {
    used to store the state of a single operation, a pointer to an exclusively
    owned buffer, the callback to invoke upon its completion, as well as the user
    data to pass to the callback. */
-#define NETFR_TOTAL_CONTEXT_COUNT 128
+#define NETFR_TOTAL_CONTEXT_COUNT 256
 
 /* The maximum amount of data which can be exchanged on connection setup via
    the Libfabric connection manager channel. */

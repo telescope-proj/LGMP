@@ -396,9 +396,9 @@ int nfrPrintCQError(int logLevel, const char * func, const char * file,
 inline static struct NFRCommBufInfo nfrGetDefaultCommBufInfo(void)
 {
   struct NFRCommBufInfo info = {0};
-  info.txSlots               = 40;
-  info.rxSlots               = 40;
-  info.writeSlots            = 46;
+  info.txSlots               = 96;
+  info.rxSlots               = 96;
+  info.writeSlots            = 62;
   info.ackSlots              = 2;
   info.slotSize              = NETFR_MESSAGE_MAX_SIZE;
   assert(NFR_TOTAL_SLOTS(info) == NETFR_TOTAL_CONTEXT_COUNT);
