@@ -340,21 +340,37 @@ int nfrResourceOpenSingle(const struct NFRInitOpts * opts, int index,
   snprintf(service, sizeof(service), "%d", ntohs(opts->addrs[index].sin_port));
 
   uint64_t flags = opts->flags;
-  if (!flags)
-  {
-    flags = FI_SOURCE | FI_NUMERICHOST;
-  }
-
-  if (fi_version() >= FI_VERSION(1, 20) &&
-      opts->apiVersion >= FI_VERSION(1, 20))
-  {
-    flags |= FI_HMEM;
-  }
 
   NFR_LOG_DEBUG("Finding fabric for address %s:%s", node, service);
 
-  for (int i = 0; i < 2; ++i)
+  for (int i = 0; i < 4; ++i)
   {
+    /* We prefer manual progress, since LGMP requires calls to lgmp*Process
+       at regular intervals anyway. Try registering with and without FI_HMEM
+       for DMABUF support as well.
+    */
+    switch (i)
+    {
+      case 0:
+        flags = opts->flags | FI_SOURCE | FI_NUMERICHOST | FI_HMEM;
+        hints->domain_attr->progress = FI_PROGRESS_MANUAL;
+        break;
+      case 1:
+        flags = opts->flags | FI_SOURCE | FI_NUMERICHOST | FI_HMEM;
+        hints->domain_attr->progress = FI_PROGRESS_UNSPEC;
+        break;
+      case 2:
+        flags = opts->flags | FI_SOURCE | FI_NUMERICHOST;
+        hints->domain_attr->progress = FI_PROGRESS_MANUAL;
+        break;
+      case 3:
+        flags = opts->flags | FI_SOURCE | FI_NUMERICHOST;
+        hints->domain_attr->progress = FI_PROGRESS_UNSPEC;
+        break;
+      default:
+        assert(!"Invalid iteration");
+        break;
+    }
     ret = fi_getinfo(opts->apiVersion, node, service, flags, hints, &info);
     if (ret < 0)
     {
