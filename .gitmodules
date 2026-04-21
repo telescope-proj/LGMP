@@ -3,4 +3,4 @@
 	url = https://github.com/dvyukov/relacy.git
 [submodule "repos/libfabric"]
 	path = repos/libfabric
-	url = https://github.com/ofiwg/libfabric
+	url = https://github.com/telescope-proj/libfabric
